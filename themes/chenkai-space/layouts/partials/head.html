@@ -2,4 +2,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}</title>
 <link rel="stylesheet" href="/css/main.css" />
+{{ $palette := "midnight" }}{{ $mode := "dark" }}
+{{ with (index hugo.Data "site") }}
+  {{ with .defaultPalette }}{{ $palette = . }}{{ end }}
+  {{ with .defaultMode }}{{ $mode = . }}{{ end }}
+{{ end }}
+<script>
+  (function () {
+    var d = { palette: {{ $palette }}, mode: {{ $mode }} };
+    window.__SITE_DEFAULTS__ = d;
+    var html = document.documentElement;
+    html.setAttribute("data-theme", localStorage.getItem("theme") || d.mode);
+    html.setAttribute("data-palette", localStorage.getItem("palette") || d.palette);
+  })();
+</script>
 <script src="/js/theme.js" defer></script>

@@ -804,6 +804,28 @@ a:hover { opacity: 0.7; }
 .admin-status { font-size: 0.85rem; color: var(--muted); }
 .admin-status.ok { color: var(--accent); }
 
+.admin-field select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+.admin-field select:focus { outline: none; border-color: var(--accent); }
+
+.theme-preview {
+  display: flex;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: 1rem 0 1.2rem;
+}
+.theme-preview .tp { flex: 1; }
+
 .admin-inline { display: flex; gap: 0.6rem; }
 .admin-inline input { flex: 1; }
 .admin-inline .admin-btn { white-space: nowrap; }

@@ -47,8 +47,10 @@
       $("conn-status").textContent = "✅ 已连接";
       $("conn-status").classList.add("ok");
       $("box-add").hidden = false;
+      $("box-theme").hidden = false;
       $("box-list").hidden = false;
       log("连接成功。");
+      loadConfig();
       reload();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
@@ -80,6 +82,38 @@
     const box = $("cover-preview");
     if (c) { box.style.backgroundImage = "url('" + c + "')"; box.classList.add("has-img"); }
     else { box.style.backgroundImage = ""; box.classList.remove("has-img"); }
+  }
+
+  // ── theme default ─────────────────────────────────────────
+  async function loadConfig() {
+    try {
+      const { config } = await api("/api/config", "GET");
+      $("t-palette").value = config.defaultPalette;
+      $("t-mode").value = config.defaultMode;
+      updateThemePreview();
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+    } catch (e) {
+      log("读取主题配置失败：" + e.message, "error");
+    }
+  }
+
+  function updateThemePreview() {
+    const box = $("theme-preview");
+    box.setAttribute("data-palette", $("t-palette").value);
+    box.setAttribute("data-theme", $("t-mode").value);
+  }
+
+  async function saveTheme() {
+    const defaultPalette = $("t-palette").value;
+    const defaultMode = $("t-mode").value;
+    try {
+      log("保存默认主题：" + defaultPalette + " / " + defaultMode);
+      const { config } = await api("/api/config", "POST", { defaultPalette, defaultMode });
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+      log("✅ 已保存，约 1 分钟后上线。");
+    } catch (e) {
+      log("保存失败：" + e.message, "error");
+    }
   }
 
   // ── add / list / delete ───────────────────────────────────
@@ -148,4 +182,7 @@
   $("btn-add").addEventListener("click", addAlbum);
   $("btn-reload").addEventListener("click", reload);
   $("f-cover").addEventListener("input", updateCover);
+  $("btn-save-theme").addEventListener("click", saveTheme);
+  $("t-palette").addEventListener("change", updateThemePreview);
+  $("t-mode").addEventListener("change", updateThemePreview);
 })();

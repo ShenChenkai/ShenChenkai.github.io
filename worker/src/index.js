@@ -19,7 +19,15 @@ const DEFAULTS = {
   GH_REPO: "ShenChenkai.github.io",
   GH_BRANCH: "main",
   DATA_PATH: "data/music.json",
+  SITE_PATH: "data/site.json",
 };
+
+// Known palette ids (must match the CSS in static/css/main.css).
+const PALETTES = [
+  "midnight", "stone", "dusk", "forest", "ink", "claude", "linear", "vercel", "raycast",
+  "newjeans1", "newjeans2", "newjeans3", "newjeans4",
+  "newjeans5", "newjeans6", "newjeans7", "newjeans8",
+];
 
 export default {
   async fetch(request, env) {
@@ -45,24 +53,46 @@ export default {
         const cfg = config(env);
 
         if (request.method === "GET") {
-          const { data } = await ghGetData(cfg, env);
-          return json({ ok: true, albums: data.albums }, 200, cors);
+          const { data } = await ghGet(cfg, env, cfg.path);
+          return json({ ok: true, albums: asAlbums(data) }, 200, cors);
         }
         if (request.method === "POST") {
           const { album } = await request.json();
           if (!album || !album.title) throw httpErr(400, "缺少标题");
-          const { data, sha } = await ghGetData(cfg, env);
-          data.albums.push(normalizeAlbum(album));
-          await ghPutData(cfg, env, data, sha, "Add album: " + album.title);
-          return json({ ok: true, albums: data.albums }, 200, cors);
+          const { data, sha } = await ghGet(cfg, env, cfg.path);
+          const albums = asAlbums(data);
+          albums.push(normalizeAlbum(album));
+          await ghPut(cfg, env, cfg.path, { albums }, sha, "Add album: " + album.title);
+          return json({ ok: true, albums }, 200, cors);
         }
         if (request.method === "DELETE") {
           const { index } = await request.json();
-          const { data, sha } = await ghGetData(cfg, env);
-          if (index < 0 || index >= data.albums.length) throw httpErr(400, "下标越界");
-          const removed = data.albums.splice(index, 1)[0];
-          await ghPutData(cfg, env, data, sha, "Remove album: " + (removed?.title || index));
-          return json({ ok: true, albums: data.albums }, 200, cors);
+          const { data, sha } = await ghGet(cfg, env, cfg.path);
+          const albums = asAlbums(data);
+          if (index < 0 || index >= albums.length) throw httpErr(400, "下标越界");
+          const removed = albums.splice(index, 1)[0];
+          await ghPut(cfg, env, cfg.path, { albums }, sha, "Remove album: " + (removed?.title || index));
+          return json({ ok: true, albums }, 200, cors);
+        }
+      }
+
+      if (url.pathname === "/api/config") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const { data } = await ghGet(cfg, env, cfg.sitePath);
+          return json({ ok: true, config: normalizeConfig(data) }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const body = await request.json();
+          const palette = String(body.defaultPalette || "");
+          const mode = body.defaultMode === "light" ? "light" : "dark";
+          if (!PALETTES.includes(palette)) throw httpErr(400, "未知配色: " + palette);
+          const { data, sha } = await ghGet(cfg, env, cfg.sitePath);
+          const next = { ...normalizeConfig(data), defaultPalette: palette, defaultMode: mode };
+          await ghPut(cfg, env, cfg.sitePath, next, sha, "Set default theme: " + palette + "/" + mode);
+          return json({ ok: true, config: next }, 200, cors);
         }
       }
 
@@ -81,6 +111,19 @@ function config(env) {
     repo: env.GH_REPO || DEFAULTS.GH_REPO,
     branch: env.GH_BRANCH || DEFAULTS.GH_BRANCH,
     path: env.DATA_PATH || DEFAULTS.DATA_PATH,
+    sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
+  };
+}
+
+function asAlbums(data) {
+  return data && Array.isArray(data.albums) ? data.albums : [];
+}
+
+function normalizeConfig(data) {
+  const d = data || {};
+  return {
+    defaultPalette: d.defaultPalette || "midnight",
+    defaultMode: d.defaultMode === "light" ? "light" : "dark",
   };
 }
 
@@ -215,9 +258,9 @@ function extractQQMid(u) {
   return m2 ? m2[1] : "";
 }
 
-// ── GitHub data file I/O ────────────────────────────────────
-function ghUrl(cfg) {
-  return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+// ── GitHub data file I/O (generic over path) ────────────────
+function ghUrl(cfg, path) {
+  return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
 }
 
 function ghHeaders(env) {
@@ -229,28 +272,28 @@ function ghHeaders(env) {
   };
 }
 
-async function ghGetData(cfg, env) {
+async function ghGet(cfg, env, path) {
   if (!env.GITHUB_TOKEN) throw httpErr(500, "服务端未设置 GITHUB_TOKEN");
-  const res = await fetch(ghUrl(cfg) + "?ref=" + encodeURIComponent(cfg.branch), {
+  const res = await fetch(ghUrl(cfg, path) + "?ref=" + encodeURIComponent(cfg.branch), {
     headers: ghHeaders(env),
   });
+  if (res.status === 404) return { data: {}, sha: null }; // file not created yet
   if (!res.ok) throw httpErr(502, "读取 GitHub 文件失败 " + res.status);
   const file = await res.json();
   let data;
   try { data = JSON.parse(b64decode(file.content)); }
-  catch (e) { data = { albums: [] }; }
-  if (!Array.isArray(data.albums)) data.albums = [];
+  catch (e) { data = {}; }
   return { data, sha: file.sha };
 }
 
-async function ghPutData(cfg, env, data, sha, message) {
+async function ghPut(cfg, env, path, data, sha, message) {
   const body = {
     message,
     content: b64encode(JSON.stringify(data, null, 2) + "\n"),
-    sha,
     branch: cfg.branch,
   };
-  const res = await fetch(ghUrl(cfg), {
+  if (sha) body.sha = sha; // omit to create a new file
+  const res = await fetch(ghUrl(cfg, path), {
     method: "PUT",
     headers: { ...ghHeaders(env), "Content-Type": "application/json" },
     body: JSON.stringify(body),

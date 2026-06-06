@@ -1,9 +1,5 @@
-(function () {
-  const stored = localStorage.getItem("theme") || "dark";
-  const palette = localStorage.getItem("palette") || "midnight";
-  document.documentElement.setAttribute("data-theme", stored);
-  document.documentElement.setAttribute("data-palette", palette);
-})();
+// Initial theme/palette is applied inline in <head> (see head.html) to avoid
+// a flash; this file only provides the interactive controls.
 
 function toggleTheme() {
   const html = document.documentElement;

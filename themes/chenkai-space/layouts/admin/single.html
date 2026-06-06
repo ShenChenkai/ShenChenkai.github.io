@@ -43,6 +43,55 @@
     <button class="admin-btn" id="btn-add" type="button">添加并发布</button>
   </section>
 
+  <!-- Theme -->
+  {{ $palettes := slice
+    (dict "id" "midnight" "name" "深海·琥珀")
+    (dict "id" "stone" "name" "暖炭·米白")
+    (dict "id" "dusk" "name" "暮色·薰衣")
+    (dict "id" "forest" "name" "林间·薄荷")
+    (dict "id" "ink" "name" "墨白·纯粹")
+    (dict "id" "claude" "name" "暖土·赤陶")
+    (dict "id" "linear" "name" "黑曜·靛蓝")
+    (dict "id" "vercel" "name" "纯黑·电蓝")
+    (dict "id" "raycast" "name" "炭黑·火焰")
+    (dict "id" "newjeans1" "name" "星紫")
+    (dict "id" "newjeans2" "name" "洋红")
+    (dict "id" "newjeans3" "name" "粉焰")
+    (dict "id" "newjeans4" "name" "橙赤")
+    (dict "id" "newjeans5" "name" "暖橘")
+    (dict "id" "newjeans6" "name" "阳黄")
+    (dict "id" "newjeans7" "name" "青柠")
+    (dict "id" "newjeans8" "name" "草绿")
+  }}
+  <section class="admin-box" id="box-theme" hidden>
+    <h2>站点默认主题色</h2>
+    <p class="admin-muted">访客第一次打开网站时看到的配色。当前：<strong id="cur-theme">—</strong></p>
+    <div class="admin-row">
+      <label class="admin-field" style="flex:1">
+        <span>配色</span>
+        <select id="t-palette">
+          {{ range $palettes }}<option value="{{ .id }}">{{ .name }}（{{ .id }}）</option>{{ end }}
+        </select>
+      </label>
+      <label class="admin-field" style="width:130px">
+        <span>明暗</span>
+        <select id="t-mode">
+          <option value="dark">深色</option>
+          <option value="light">浅色</option>
+        </select>
+      </label>
+    </div>
+    <div class="theme-preview" id="theme-preview" data-theme="dark" data-palette="midnight">
+      <span class="tp" style="background:var(--bg)"></span>
+      <span class="tp" style="background:var(--bg2)"></span>
+      <span class="tp" style="background:var(--border)"></span>
+      <span class="tp" style="background:var(--muted)"></span>
+      <span class="tp" style="background:var(--text)"></span>
+      <span class="tp" style="background:var(--accent)"></span>
+    </div>
+    <button class="admin-btn" id="btn-save-theme" type="button">保存默认</button>
+  </section>
+
   <!-- List -->
   <section class="admin-box" id="box-list" hidden>
     <div class="admin-row admin-row--head">

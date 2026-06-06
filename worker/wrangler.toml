@@ -8,6 +8,7 @@ GH_OWNER = "ShenChenkai"
 GH_REPO = "ShenChenkai.github.io"
 GH_BRANCH = "main"
 DATA_PATH = "data/music.json"
+SITE_PATH = "data/site.json"
 
 # Secrets are NOT stored here. Set them with:
 #   wrangler secret put ADMIN_PASSWORD
