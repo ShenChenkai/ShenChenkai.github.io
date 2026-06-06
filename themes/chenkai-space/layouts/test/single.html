@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-palette="midnight">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body>
+  {{ partial "header.html" . }}
+  <main class="site-main">
+    <div class="test-page">
+      <h1>主题色板</h1>
+      <p class="subtitle">点击卡片切换配色方案，右上角切换深色 / 浅色</p>
+
+      <div class="test-controls">
+        <label>深/浅：</label>
+        <button onclick="setTheme('dark')" data-mode="dark" class="active">深色</button>
+        <button onclick="setTheme('light')" data-mode="light">浅色</button>
+      </div>
+
+      <div class="palette-grid">
+
+        <!-- Midnight -->
+        <div class="palette-card active" data-palette="midnight" onclick="setPalette('midnight')"
+          style="background:#0d1117; color:#e6edf3; border-color:#21262d;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#8b949e">MIDNIGHT</span>
+            <span class="p-title">深海 · 琥珀</span>
+            <span class="p-text" style="color:#8b949e">适合夜间阅读的深邃感，带一点温暖的金色点缀</span>
+            <span class="p-accent" style="background:#d4a843; color:#0d1117">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#0d1117"></span>
+            <span style="background:#161b22"></span>
+            <span style="background:#21262d"></span>
+            <span style="background:#8b949e"></span>
+            <span style="background:#e6edf3"></span>
+            <span style="background:#d4a843"></span>
+          </div>
+        </div>
+
+        <!-- Stone -->
+        <div class="palette-card" data-palette="stone" onclick="setPalette('stone')"
+          style="background:#111110; color:#eeebe6; border-color:#2e2c2a;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#938f88">STONE</span>
+            <span class="p-title">暖炭 · 米白</span>
+            <span class="p-text" style="color:#938f88">最接近纸张的质感，极简主义者的选择</span>
+            <span class="p-accent" style="background:#e8d5b0; color:#111110">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#111110"></span>
+            <span style="background:#1c1b1a"></span>
+            <span style="background:#2e2c2a"></span>
+            <span style="background:#938f88"></span>
+            <span style="background:#eeebe6"></span>
+            <span style="background:#e8d5b0"></span>
+          </div>
+        </div>
+
+        <!-- Dusk -->
+        <div class="palette-card" data-palette="dusk" onclick="setPalette('dusk')"
+          style="background:#10101a; color:#e8e6f0; border-color:#28283c;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#9090b0">DUSK</span>
+            <span class="p-title">暮色 · 薰衣</span>
+            <span class="p-text" style="color:#9090b0">带紫调的夜晚，梦幻而有艺术气息</span>
+            <span class="p-accent" style="background:#a78bfa; color:#10101a">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#10101a"></span>
+            <span style="background:#18182a"></span>
+            <span style="background:#28283c"></span>
+            <span style="background:#9090b0"></span>
+            <span style="background:#e8e6f0"></span>
+            <span style="background:#a78bfa"></span>
+          </div>
+        </div>
+
+        <!-- Forest -->
+        <div class="palette-card" data-palette="forest" onclick="setPalette('forest')"
+          style="background:#0d1210; color:#ddeedd; border-color:#233028;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#7a9e88">FOREST</span>
+            <span class="p-title">林间 · 薄荷</span>
+            <span class="p-text" style="color:#7a9e88">自然与科技的交汇，清新克制</span>
+            <span class="p-accent" style="background:#6fcf97; color:#0d1210">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#0d1210"></span>
+            <span style="background:#161e19"></span>
+            <span style="background:#233028"></span>
+            <span style="background:#7a9e88"></span>
+            <span style="background:#ddeedd"></span>
+            <span style="background:#6fcf97"></span>
+          </div>
+        </div>
+
+        <!-- Ink -->
+        <div class="palette-card" data-palette="ink" onclick="setPalette('ink')"
+          style="background:#000000; color:#f0f0f0; border-color:#222222;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#888888">INK</span>
+            <span class="p-title">墨白 · 纯粹</span>
+            <span class="p-text" style="color:#888888">绝对的对比，像高级杂志的排版</span>
+            <span class="p-accent" style="background:#ffffff; color:#000000">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#000000"></span>
+            <span style="background:#111111"></span>
+            <span style="background:#222222"></span>
+            <span style="background:#888888"></span>
+            <span style="background:#f0f0f0"></span>
+            <span style="background:#ffffff"></span>
+          </div>
+        </div>
+
+        <!-- Claude -->
+        <div class="palette-card" data-palette="claude" onclick="setPalette('claude')"
+          style="background:#1d1b18; color:#e8e3db; border-color:#383330;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#a09890">CLAUDE</span>
+            <span class="p-title">暖土 · 赤陶</span>
+            <span class="p-text" style="color:#a09890">Anthropic Claude 的配色，温暖克制，有人文气息</span>
+            <span class="p-accent" style="background:#cf7150; color:#1d1b18">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#1d1b18"></span>
+            <span style="background:#26231e"></span>
+            <span style="background:#383330"></span>
+            <span style="background:#a09890"></span>
+            <span style="background:#e8e3db"></span>
+            <span style="background:#cf7150"></span>
+          </div>
+        </div>
+
+        <!-- Linear -->
+        <div class="palette-card" data-palette="linear" onclick="setPalette('linear')"
+          style="background:#0f0f0f; color:#f0f0f0; border-color:#2a2a2a;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#888888">LINEAR</span>
+            <span class="p-title">黑曜 · 靛蓝</span>
+            <span class="p-text" style="color:#888888">Linear 的极致黑底，配科技感靛蓝点缀</span>
+            <span class="p-accent" style="background:#5c6be8; color:#0f0f0f">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#0f0f0f"></span>
+            <span style="background:#1a1a1a"></span>
+            <span style="background:#2a2a2a"></span>
+            <span style="background:#888888"></span>
+            <span style="background:#f0f0f0"></span>
+            <span style="background:#5c6be8"></span>
+          </div>
+        </div>
+
+        <!-- Vercel -->
+        <div class="palette-card" data-palette="vercel" onclick="setPalette('vercel')"
+          style="background:#000000; color:#ededed; border-color:#333333;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#888888">VERCEL</span>
+            <span class="p-title">纯黑 · 电蓝</span>
+            <span class="p-text" style="color:#888888">Vercel 风格，最工程师的审美，蓝色超链接感</span>
+            <span class="p-accent" style="background:#0070f3; color:#000000">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#000000"></span>
+            <span style="background:#111111"></span>
+            <span style="background:#333333"></span>
+            <span style="background:#888888"></span>
+            <span style="background:#ededed"></span>
+            <span style="background:#0070f3"></span>
+          </div>
+        </div>
+
+        <!-- Raycast -->
+        <div class="palette-card" data-palette="raycast" onclick="setPalette('raycast')"
+          style="background:#111113; color:#efefef; border-color:#2e2e32;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#909096">RAYCAST</span>
+            <span class="p-title">炭黑 · 火焰</span>
+            <span class="p-text" style="color:#909096">Raycast 的高饱和红，活力感强，不走寻常路</span>
+            <span class="p-accent" style="background:#ff6363; color:#111113">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#111113"></span>
+            <span style="background:#1c1c1f"></span>
+            <span style="background:#2e2e32"></span>
+            <span style="background:#909096"></span>
+            <span style="background:#efefef"></span>
+            <span style="background:#ff6363"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 1 — 星紫 -->
+        <div class="palette-card" data-palette="newjeans1" onclick="setPalette('newjeans1')"
+          style="background:#100d1a; color:#ede8ff; border-color:#2a2040;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#9080c0">NEWJEANS1</span>
+            <span class="p-title">星紫</span>
+            <span class="p-text" style="color:#9080c0">NewJeans 彩虹第一色，深邃的星空紫</span>
+            <span class="p-accent" style="background:#8b5cf6; color:#100d1a">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#100d1a"></span>
+            <span style="background:#18142a"></span>
+            <span style="background:#2a2040"></span>
+            <span style="background:#9080c0"></span>
+            <span style="background:#ede8ff"></span>
+            <span style="background:#8b5cf6"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 2 — 洋红 -->
+        <div class="palette-card" data-palette="newjeans2" onclick="setPalette('newjeans2')"
+          style="background:#180d18; color:#ffe8ff; border-color:#3a203a;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#c080c0">NEWJEANS2</span>
+            <span class="p-title">洋红</span>
+            <span class="p-text" style="color:#c080c0">NewJeans 彩虹第二色，鲜艳的品红洋红</span>
+            <span class="p-accent" style="background:#e040bb; color:#180d18">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#180d18"></span>
+            <span style="background:#251525"></span>
+            <span style="background:#3a203a"></span>
+            <span style="background:#c080c0"></span>
+            <span style="background:#ffe8ff"></span>
+            <span style="background:#e040bb"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 3 — 粉焰 -->
+        <div class="palette-card" data-palette="newjeans3" onclick="setPalette('newjeans3')"
+          style="background:#180d12; color:#ffe8f0; border-color:#3a2030;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#c08098">NEWJEANS3</span>
+            <span class="p-title">粉焰</span>
+            <span class="p-text" style="color:#c08098">NewJeans 彩虹第三色，燃烧的荧光粉</span>
+            <span class="p-accent" style="background:#f0408a; color:#180d12">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#180d12"></span>
+            <span style="background:#25141c"></span>
+            <span style="background:#3a2030"></span>
+            <span style="background:#c08098"></span>
+            <span style="background:#ffe8f0"></span>
+            <span style="background:#f0408a"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 4 — 橙赤 -->
+        <div class="palette-card" data-palette="newjeans4" onclick="setPalette('newjeans4')"
+          style="background:#180e0a; color:#ffe8dc; border-color:#3a2418;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#c09080">NEWJEANS4</span>
+            <span class="p-title">橙赤</span>
+            <span class="p-text" style="color:#c09080">NewJeans 彩虹第四色，炽热的橙红</span>
+            <span class="p-accent" style="background:#f0502a; color:#180e0a">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#180e0a"></span>
+            <span style="background:#251510"></span>
+            <span style="background:#3a2418"></span>
+            <span style="background:#c09080"></span>
+            <span style="background:#ffe8dc"></span>
+            <span style="background:#f0502a"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 5 — 暖橘 -->
+        <div class="palette-card" data-palette="newjeans5" onclick="setPalette('newjeans5')"
+          style="background:#18120a; color:#ffe8cc; border-color:#3a2c18;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#c09a60">NEWJEANS5</span>
+            <span class="p-title">暖橘</span>
+            <span class="p-text" style="color:#c09a60">NewJeans 彩虹第五色，温暖的夕阳橘</span>
+            <span class="p-accent" style="background:#f08020; color:#18120a">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#18120a"></span>
+            <span style="background:#251a10"></span>
+            <span style="background:#3a2c18"></span>
+            <span style="background:#c09a60"></span>
+            <span style="background:#ffe8cc"></span>
+            <span style="background:#f08020"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 6 — 阳黄 -->
+        <div class="palette-card" data-palette="newjeans6" onclick="setPalette('newjeans6')"
+          style="background:#151208; color:#fff0c0; border-color:#302c1c;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#b0a060">NEWJEANS6</span>
+            <span class="p-title">阳黄</span>
+            <span class="p-text" style="color:#b0a060">NewJeans 彩虹第六色，明媚的正午黄</span>
+            <span class="p-accent" style="background:#f0c820; color:#151208">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#151208"></span>
+            <span style="background:#201c10"></span>
+            <span style="background:#302c1c"></span>
+            <span style="background:#b0a060"></span>
+            <span style="background:#fff0c0"></span>
+            <span style="background:#f0c820"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 7 — 青柠 -->
+        <div class="palette-card" data-palette="newjeans7" onclick="setPalette('newjeans7')"
+          style="background:#0e1208; color:#e8f0c0; border-color:#242e18;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#90a860">NEWJEANS7</span>
+            <span class="p-title">青柠</span>
+            <span class="p-text" style="color:#90a860">NewJeans 彩虹第七色，清爽的黄绿青柠</span>
+            <span class="p-accent" style="background:#90c830; color:#0e1208">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#0e1208"></span>
+            <span style="background:#161c10"></span>
+            <span style="background:#242e18"></span>
+            <span style="background:#90a860"></span>
+            <span style="background:#e8f0c0"></span>
+            <span style="background:#90c830"></span>
+          </div>
+        </div>
+
+        <!-- NewJeans 8 — 草绿 -->
+        <div class="palette-card" data-palette="newjeans8" onclick="setPalette('newjeans8')"
+          style="background:#0a1210; color:#c8f0dc; border-color:#1c3028;">
+          <div class="palette-preview">
+            <span class="p-tag" style="color:#70b090">NEWJEANS8</span>
+            <span class="p-title">草绿</span>
+            <span class="p-text" style="color:#70b090">NewJeans 彩虹第八色，生机勃勃的草地绿</span>
+            <span class="p-accent" style="background:#40b848; color:#0a1210">Accent</span>
+          </div>
+          <div class="palette-swatches">
+            <span style="background:#0a1210"></span>
+            <span style="background:#101c18"></span>
+            <span style="background:#1c3028"></span>
+            <span style="background:#70b090"></span>
+            <span style="background:#c8f0dc"></span>
+            <span style="background:#40b848"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Preview section -->
+      <div style="border:1px solid var(--border); border-radius:10px; padding:2rem; margin-top:1rem;">
+        <h2 style="font-size:1.3rem; margin-bottom:1rem;">效果预览</h2>
+        <p style="color:var(--muted); margin-bottom:1.5rem;">
+          这是正文文字的颜色和密度，用来感受阅读体验。
+          <a href="#">这是链接的颜色</a>，点击上方卡片实时切换。
+        </p>
+        <blockquote style="border-left:3px solid var(--accent); padding-left:1rem; color:var(--muted); font-style:italic;">
+          Music saves the world — Chenkai
+        </blockquote>
+        <div style="margin-top:1.5rem; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:1rem; font-family:monospace; font-size:0.85rem; color:var(--muted);">
+          <span style="color:var(--accent)">const</span> site = <span style="color:var(--accent2)">"Chenkai P Space"</span>;
+        </div>
+      </div>
+
+    </div>
+  </main>
+  {{ partial "footer.html" . }}
+
+  <script>
+    function setTheme(mode) {
+      document.documentElement.setAttribute("data-theme", mode);
+      localStorage.setItem("theme", mode);
+      document.querySelectorAll(".test-controls button[data-mode]").forEach(el => {
+        el.classList.toggle("active", el.dataset.mode === mode);
+      });
+    }
+
+    document.querySelectorAll(".palette-card").forEach(card => {
+      if (card.dataset.palette === (localStorage.getItem("palette") || "midnight")) {
+        card.classList.add("active");
+      } else {
+        card.classList.remove("active");
+      }
+    });
+  </script>
+</body>
+</html>

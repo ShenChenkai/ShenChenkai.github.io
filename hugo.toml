@@ -1,0 +1,27 @@
+baseURL = "https://ShenChenkai.github.io/"
+languageCode = "zh-CN"
+title = "Chenkai P Space"
+theme = "chenkai-space"
+enableEmoji = true
+
+[params]
+  tagline = "Music saves the world"
+  author = "Chenkai"
+
+[menu]
+  [[menu.main]]
+    name = "Tech"
+    url = "/tech/"
+    weight = 1
+  [[menu.main]]
+    name = "Essays"
+    url = "/essays/"
+    weight = 2
+  [[menu.main]]
+    name = "Photos"
+    url = "/photos/"
+    weight = 3
+  [[menu.main]]
+    name = "Music"
+    url = "/music/"
+    weight = 4

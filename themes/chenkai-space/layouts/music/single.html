@@ -1,0 +1,18 @@
+{{ define "main" }}
+<div class="music-page">
+  <div class="music-head">
+    <h1 class="page-title">Music</h1>
+    <p class="subtitle">{{ .Site.Params.tagline }}</p>
+  </div>
+
+  <div class="music-wall" id="music-wall">
+    <div class="music-row scroll-left" data-row="0"></div>
+    <div class="music-row scroll-right" data-row="1"></div>
+  </div>
+
+  <p class="music-empty" id="music-empty" hidden>还没有专辑，去后台添加吧。</p>
+</div>
+
+<script>window.__MUSIC_ALBUMS__ = {{ (index hugo.Data "music").albums }};</script>
+<script src="/js/music.js" defer></script>
+{{ end }}

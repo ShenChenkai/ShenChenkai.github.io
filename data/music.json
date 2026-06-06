@@ -1,0 +1,12 @@
+{
+  "albums": [
+    { "title": "Get Up", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "OMG", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "How Sweet", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "Supernatural", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "New Jeans", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "Ditto", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "Attention", "artist": "NewJeans", "cover": "", "link": "#" },
+    { "title": "Hype Boy", "artist": "NewJeans", "cover": "", "link": "#" }
+  ]
+}

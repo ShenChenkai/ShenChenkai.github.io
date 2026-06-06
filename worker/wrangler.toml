@@ -1,0 +1,14 @@
+name = "music-admin"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Repo target for the data file. Override here if needed.
+[vars]
+GH_OWNER = "ShenChenkai"
+GH_REPO = "ShenChenkai.github.io"
+GH_BRANCH = "main"
+DATA_PATH = "data/music.json"
+
+# Secrets are NOT stored here. Set them with:
+#   wrangler secret put ADMIN_PASSWORD
+#   wrangler secret put GITHUB_TOKEN

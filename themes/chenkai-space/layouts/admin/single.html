@@ -1,0 +1,59 @@
+{{ define "main" }}
+<div class="admin-page">
+  <h1 class="page-title">专辑管理后台</h1>
+  <p class="subtitle">输入音乐链接自动识别，密码登录，提交后约 1 分钟自动重建上线。</p>
+
+  <!-- Connect -->
+  <section class="admin-box" id="box-connect">
+    <h2>连接</h2>
+    <label class="admin-field">
+      <span>Worker 地址</span>
+      <input type="url" id="worker-url" value="https://music-admin.shenck.workers.dev" placeholder="https://music-admin.xxx.workers.dev" autocomplete="off" />
+    </label>
+    <label class="admin-field">
+      <span>管理员密码</span>
+      <input type="password" id="admin-pwd" placeholder="你设定的密码" autocomplete="current-password" />
+    </label>
+    <div class="admin-row">
+      <button class="admin-btn" id="btn-connect" type="button">连接</button>
+      <span class="admin-status" id="conn-status">未连接</span>
+    </div>
+  </section>
+
+  <!-- Add (hidden until connected) -->
+  <section class="admin-box" id="box-add" hidden>
+    <h2>新增专辑</h2>
+    <label class="admin-field">
+      <span>音乐链接（Apple Music / QQ 音乐）</span>
+      <div class="admin-inline">
+        <input type="url" id="f-url" placeholder="粘贴歌曲分享链接…" />
+        <button class="admin-btn" id="btn-resolve" type="button">识别</button>
+      </div>
+    </label>
+
+    <div class="admin-detect">
+      <div class="admin-cover" id="cover-preview" aria-hidden="true"></div>
+      <div class="admin-detect-fields">
+        <label class="admin-field"><span>标题 *</span><input type="text" id="f-title" /></label>
+        <label class="admin-field"><span>艺人</span><input type="text" id="f-artist" /></label>
+        <label class="admin-field"><span>封面 URL</span><input type="url" id="f-cover" /></label>
+        <label class="admin-field"><span>跳转链接</span><input type="url" id="f-link" /></label>
+      </div>
+    </div>
+    <button class="admin-btn" id="btn-add" type="button">添加并发布</button>
+  </section>
+
+  <!-- List -->
+  <section class="admin-box" id="box-list" hidden>
+    <div class="admin-row admin-row--head">
+      <h2>现有专辑</h2>
+      <button class="admin-btn ghost" id="btn-reload" type="button">刷新</button>
+    </div>
+    <ol class="admin-list" id="album-list"></ol>
+  </section>
+
+  <pre class="admin-log" id="admin-log" aria-live="polite"></pre>
+</div>
+
+<script src="/js/admin.js" defer></script>
+{{ end }}
