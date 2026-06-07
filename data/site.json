@@ -2,9 +2,9 @@
   "defaultPalette": "claude",
   "defaultMode": "light",
   "particles": {
-    "gap": 35,
-    "dotOpacity": 0.28,
-    "jitter": 2.3,
+    "gap": 25,
+    "dotOpacity": 0.34,
+    "jitter": 1,
     "wavePeriod": 8,
     "waveAngle": 72,
     "waveOpacity": 1
