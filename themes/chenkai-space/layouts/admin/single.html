@@ -96,7 +96,7 @@
   <section class="admin-box" id="box-particles" hidden>
     <h2>音乐墙粒子背景</h2>
     <p class="admin-muted">下方为实时预览（颜色随当前配色）。</p>
-    <div class="music-wall particle-preview" id="particle-preview"></div>
+    <div class="particle-preview" id="particle-preview"><canvas id="particle-preview-canvas"></canvas></div>
     <div class="particle-grid">
       <label class="admin-field"><span>点间距 <b class="pval" id="v-gap"></b></span>
         <input type="range" id="p-gap" min="8" max="48" step="1" /></label>
@@ -126,5 +126,6 @@
   <pre class="admin-log" id="admin-log" aria-live="polite"></pre>
 </div>
 
+<script src="/js/particles.js" defer></script>
 <script src="/js/admin.js" defer></script>
 {{ end }}

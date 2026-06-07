@@ -98,6 +98,7 @@
       const defs = { gap: 16, dotOpacity: 0.28, jitter: 1, wavePeriod: 8, waveAngle: 72, waveOpacity: 0.6 };
       PKEYS.forEach((k) => { $("p-" + k).value = p[k] != null ? p[k] : defs[k]; });
       applyParticlePreview();
+      startParticlePreview();
     } catch (e) {
       log("读取站点配置失败：" + e.message, "error");
     }
@@ -105,6 +106,18 @@
 
   // ── particles ─────────────────────────────────────────────
   const PKEYS = ["gap", "dotOpacity", "jitter", "wavePeriod", "waveAngle", "waveOpacity"];
+  let previewStarted = false;
+
+  // Mount the live canvas preview once the box is visible. The field reads the
+  // CSS vars set by applyParticlePreview() on every frame, so slider changes
+  // and theme switches show up without re-instantiating.
+  function startParticlePreview() {
+    if (previewStarted || !window.ParticleField) return;
+    const canvas = $("particle-preview-canvas");
+    if (!canvas) return;
+    window.ParticleField(canvas, $("particle-preview"));
+    previewStarted = true;
+  }
 
   function gatherParticles() {
     const p = {};

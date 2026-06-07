@@ -1,4 +1,5 @@
 {{ define "main" }}
+<canvas class="page-particles" id="page-particles" aria-hidden="true"></canvas>
 <div class="music-page">
   <div class="music-head">
     <h1 class="page-title">Music</h1>
@@ -14,5 +15,6 @@
 </div>
 
 <script>window.__MUSIC_ALBUMS__ = {{ (index hugo.Data "music").albums }};</script>
+<script src="/js/particles.js" defer></script>
 <script src="/js/music.js" defer></script>
 {{ end }}
