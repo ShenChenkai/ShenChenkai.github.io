@@ -23,6 +23,15 @@
     return baseAlbums().concat(extraAlbums());
   }
 
+  // Fisher–Yates shuffle (returns the same array, shuffled in place).
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
   function albumEl(a, i) {
     const link = a.link && a.link !== "#" ? a.link : null;
     const el = document.createElement(link ? "a" : "div");
@@ -67,9 +76,11 @@
     rows.forEach((row) => {
       row.innerHTML = "";
       if (!albums.length) return;
+      // Each row gets its own random order, reshuffled on every load.
+      const order = shuffle(albums.slice());
       // Duplicate the set so the marquee loops seamlessly (translateX -50%).
       for (let dup = 0; dup < 2; dup++) {
-        albums.forEach((a, i) => row.appendChild(albumEl(a, i)));
+        order.forEach((a, i) => row.appendChild(albumEl(a, i)));
       }
     });
   }
