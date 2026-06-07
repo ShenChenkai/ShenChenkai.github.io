@@ -1,4 +1,12 @@
 {
   "defaultPalette": "newjeans2",
-  "defaultMode": "light"
+  "defaultMode": "light",
+  "particles": {
+    "gap": 16,
+    "dotOpacity": 0.28,
+    "jitter": 1,
+    "wavePeriod": 8,
+    "waveAngle": 72,
+    "waveOpacity": 0.6
+  }
 }

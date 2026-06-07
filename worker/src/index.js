@@ -90,8 +90,11 @@ export default {
           const mode = body.defaultMode === "light" ? "light" : "dark";
           if (!PALETTES.includes(palette)) throw httpErr(400, "未知配色: " + palette);
           const { data, sha } = await ghGet(cfg, env, cfg.sitePath);
-          const next = { ...normalizeConfig(data), defaultPalette: palette, defaultMode: mode };
-          await ghPut(cfg, env, cfg.sitePath, next, sha, "Set default theme: " + palette + "/" + mode);
+          const next = normalizeConfig(data);
+          next.defaultPalette = palette;
+          next.defaultMode = mode;
+          if (body.particles) next.particles = normalizeParticles(body.particles);
+          await ghPut(cfg, env, cfg.sitePath, next, sha, "Update site config: " + palette + "/" + mode);
           return json({ ok: true, config: next }, 200, cors);
         }
       }
@@ -119,11 +122,30 @@ function asAlbums(data) {
   return data && Array.isArray(data.albums) ? data.albums : [];
 }
 
+function clampNum(n, lo, hi, dflt) {
+  n = Number(n);
+  if (!isFinite(n)) return dflt;
+  return Math.min(hi, Math.max(lo, n));
+}
+
+function normalizeParticles(p) {
+  p = p || {};
+  return {
+    gap: clampNum(p.gap, 8, 48, 16),
+    dotOpacity: clampNum(p.dotOpacity, 0, 1, 0.28),
+    jitter: clampNum(p.jitter, 0, 4, 1),
+    wavePeriod: clampNum(p.wavePeriod, 2, 40, 8),
+    waveAngle: clampNum(p.waveAngle, 0, 180, 72),
+    waveOpacity: clampNum(p.waveOpacity, 0, 1, 0.6),
+  };
+}
+
 function normalizeConfig(data) {
   const d = data || {};
   return {
     defaultPalette: d.defaultPalette || "midnight",
     defaultMode: d.defaultMode === "light" ? "light" : "dark",
+    particles: normalizeParticles(d.particles),
   };
 }
 

@@ -48,6 +48,7 @@
       $("conn-status").classList.add("ok");
       $("box-add").hidden = false;
       $("box-theme").hidden = false;
+      $("box-particles").hidden = false;
       $("box-list").hidden = false;
       log("连接成功。");
       loadConfig();
@@ -92,8 +93,53 @@
       $("t-mode").value = config.defaultMode;
       updateThemePreview();
       $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+
+      const p = config.particles || {};
+      const defs = { gap: 16, dotOpacity: 0.28, jitter: 1, wavePeriod: 8, waveAngle: 72, waveOpacity: 0.6 };
+      PKEYS.forEach((k) => { $("p-" + k).value = p[k] != null ? p[k] : defs[k]; });
+      applyParticlePreview();
     } catch (e) {
-      log("读取主题配置失败：" + e.message, "error");
+      log("读取站点配置失败：" + e.message, "error");
+    }
+  }
+
+  // ── particles ─────────────────────────────────────────────
+  const PKEYS = ["gap", "dotOpacity", "jitter", "wavePeriod", "waveAngle", "waveOpacity"];
+
+  function gatherParticles() {
+    const p = {};
+    PKEYS.forEach((k) => (p[k] = Number($("p-" + k).value)));
+    return p;
+  }
+
+  function applyParticlePreview() {
+    const p = gatherParticles();
+    const el = $("particle-preview");
+    el.style.setProperty("--dot-gap", p.gap + "px");
+    el.style.setProperty("--dot-opacity", p.dotOpacity);
+    el.style.setProperty("--jitter", p.jitter);
+    el.style.setProperty("--wave-period", p.wavePeriod + "s");
+    el.style.setProperty("--wave-angle", p.waveAngle + "deg");
+    el.style.setProperty("--wave-opacity", p.waveOpacity);
+    $("v-gap").textContent = p.gap + "px";
+    $("v-dotOpacity").textContent = p.dotOpacity.toFixed(2);
+    $("v-jitter").textContent = p.jitter.toFixed(1) + "×";
+    $("v-wavePeriod").textContent = p.wavePeriod + "s";
+    $("v-waveAngle").textContent = p.waveAngle + "°";
+    $("v-waveOpacity").textContent = p.waveOpacity.toFixed(2);
+  }
+
+  async function saveParticles() {
+    try {
+      log("保存粒子设置…");
+      await api("/api/config", "POST", {
+        defaultPalette: $("t-palette").value,
+        defaultMode: $("t-mode").value,
+        particles: gatherParticles(),
+      });
+      log("✅ 粒子设置已保存，约 1 分钟后上线。");
+    } catch (e) {
+      log("保存失败：" + e.message, "error");
     }
   }
 
@@ -185,4 +231,6 @@
   $("btn-save-theme").addEventListener("click", saveTheme);
   $("t-palette").addEventListener("change", updateThemePreview);
   $("t-mode").addEventListener("change", updateThemePreview);
+  $("btn-save-particles").addEventListener("click", saveParticles);
+  PKEYS.forEach((k) => $("p-" + k).addEventListener("input", applyParticlePreview));
 })();

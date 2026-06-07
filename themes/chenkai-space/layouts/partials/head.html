@@ -17,3 +17,15 @@
   })();
 </script>
 <script src="/js/theme.js" defer></script>
+{{ with (index hugo.Data "site") }}{{ with .particles }}
+<style>
+  :root {
+    --dot-gap: {{ .gap | default 16 }}px;
+    --dot-opacity: {{ .dotOpacity | default 0.28 }};
+    --jitter: {{ .jitter | default 1 }};
+    --wave-period: {{ .wavePeriod | default 8 }}s;
+    --wave-angle: {{ .waveAngle | default 72 }}deg;
+    --wave-opacity: {{ .waveOpacity | default 0.6 }};
+  }
+</style>
+{{ end }}{{ end }}

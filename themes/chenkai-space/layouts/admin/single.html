@@ -92,6 +92,28 @@
     <button class="admin-btn" id="btn-save-theme" type="button">保存默认</button>
   </section>
 
+  <!-- Particles -->
+  <section class="admin-box" id="box-particles" hidden>
+    <h2>音乐墙粒子背景</h2>
+    <p class="admin-muted">下方为实时预览（颜色随当前配色）。</p>
+    <div class="music-wall particle-preview" id="particle-preview"></div>
+    <div class="particle-grid">
+      <label class="admin-field"><span>点间距 <b class="pval" id="v-gap"></b></span>
+        <input type="range" id="p-gap" min="8" max="48" step="1" /></label>
+      <label class="admin-field"><span>点亮度 <b class="pval" id="v-dotOpacity"></b></span>
+        <input type="range" id="p-dotOpacity" min="0" max="1" step="0.02" /></label>
+      <label class="admin-field"><span>震动强度 <b class="pval" id="v-jitter"></b></span>
+        <input type="range" id="p-jitter" min="0" max="4" step="0.1" /></label>
+      <label class="admin-field"><span>波浪周期 <b class="pval" id="v-wavePeriod"></b></span>
+        <input type="range" id="p-wavePeriod" min="2" max="40" step="1" /></label>
+      <label class="admin-field"><span>波浪角度 <b class="pval" id="v-waveAngle"></b></span>
+        <input type="range" id="p-waveAngle" min="0" max="180" step="1" /></label>
+      <label class="admin-field"><span>波浪亮度 <b class="pval" id="v-waveOpacity"></b></span>
+        <input type="range" id="p-waveOpacity" min="0" max="1" step="0.02" /></label>
+    </div>
+    <button class="admin-btn" id="btn-save-particles" type="button" style="margin-top:1.2rem">保存粒子设置</button>
+  </section>
+
   <!-- List -->
   <section class="admin-box" id="box-list" hidden>
     <div class="admin-row admin-row--head">

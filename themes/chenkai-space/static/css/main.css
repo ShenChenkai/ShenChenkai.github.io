@@ -631,16 +631,16 @@ a:hover { opacity: 0.7; }
   z-index: 0;
   pointer-events: none;
   background-image: radial-gradient(var(--accent) 1px, transparent 1.6px);
-  background-size: 16px 16px;
-  opacity: 0.28;
+  background-size: var(--dot-gap, 16px) var(--dot-gap, 16px);
+  opacity: var(--dot-opacity, 0.28);
   animation: dot-jitter 0.42s steps(3) infinite;
 }
 
 @keyframes dot-jitter {
   0%   { transform: translate(0, 0); }
-  25%  { transform: translate(0.8px, -0.6px); }
-  50%  { transform: translate(-0.7px, 0.6px); }
-  75%  { transform: translate(0.5px, 0.5px); }
+  25%  { transform: translate(calc(0.8px * var(--jitter, 1)), calc(-0.6px * var(--jitter, 1))); }
+  50%  { transform: translate(calc(-0.7px * var(--jitter, 1)), calc(0.6px * var(--jitter, 1))); }
+  75%  { transform: translate(calc(0.5px * var(--jitter, 1)), calc(0.5px * var(--jitter, 1))); }
   100% { transform: translate(0, 0); }
 }
 
@@ -652,15 +652,15 @@ a:hover { opacity: 0.7; }
   z-index: 0;
   pointer-events: none;
   background-image: radial-gradient(var(--accent) 1.7px, transparent 2.4px);
-  background-size: 16px 16px;
-  opacity: 0.6;
-  -webkit-mask-image: linear-gradient(72deg, transparent 41%, #000 50%, transparent 59%);
-          mask-image: linear-gradient(72deg, transparent 41%, #000 50%, transparent 59%);
+  background-size: var(--dot-gap, 16px) var(--dot-gap, 16px);
+  opacity: var(--wave-opacity, 0.6);
+  -webkit-mask-image: linear-gradient(var(--wave-angle, 72deg), transparent 41%, #000 50%, transparent 59%);
+          mask-image: linear-gradient(var(--wave-angle, 72deg), transparent 41%, #000 50%, transparent 59%);
   -webkit-mask-size: 300% 100%;
           mask-size: 300% 100%;
   -webkit-mask-position: 160% 0;
           mask-position: 160% 0;
-  animation: dot-wave 8s ease-in-out infinite;
+  animation: dot-wave var(--wave-period, 8s) ease-in-out infinite;
 }
 
 @keyframes dot-wave {
@@ -876,6 +876,25 @@ a:hover { opacity: 0.7; }
   margin: 1rem 0 1.2rem;
 }
 .theme-preview .tp { flex: 1; }
+
+/* Contained version of the music wall, for previewing particles in admin. */
+.particle-preview {
+  width: 100% !important;
+  margin: 1rem 0 1.2rem !important;
+  height: 96px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+
+.particle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+.particle-grid .admin-field { margin-bottom: 0; }
+.particle-grid input[type="range"] { width: 100%; accent-color: var(--accent); }
+.particle-grid .pval { color: var(--text); font-variant-numeric: tabular-nums; }
 
 .admin-inline { display: flex; gap: 0.6rem; }
 .admin-inline input { flex: 1; }
