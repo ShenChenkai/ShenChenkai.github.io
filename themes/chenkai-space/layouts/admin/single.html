@@ -43,6 +43,43 @@
     <button class="admin-btn" id="btn-add" type="button">添加并发布</button>
   </section>
 
+  <!-- Thoughts -->
+  <section class="admin-box" id="box-thoughts" hidden>
+    <h2>想法 / Thoughts</h2>
+    <p class="admin-muted">写长想法或短碎念；也可粘贴 X 帖子链接抓取正文。提交后约 1 分钟上线。</p>
+    <div class="admin-row">
+      <label class="admin-field" style="width:150px">
+        <span>类型</span>
+        <select id="th-type">
+          <option value="short">短想法</option>
+          <option value="long">长想法</option>
+        </select>
+      </label>
+      <label class="admin-field" id="th-title-field" style="flex:1" hidden>
+        <span>标题</span>
+        <input type="text" id="th-title" placeholder="长想法的标题…" />
+      </label>
+    </div>
+    <label class="admin-field">
+      <span>从 X 抓取正文（可选，回复多数情况下抓不到）</span>
+      <div class="admin-inline">
+        <input type="url" id="th-xurl" placeholder="粘贴 X 帖子链接…" />
+        <button class="admin-btn" id="btn-th-fetch" type="button">抓取</button>
+      </div>
+    </label>
+    <label class="admin-field">
+      <span>正文（支持 Markdown）*</span>
+      <textarea id="th-body" rows="5" placeholder="写点什么…"></textarea>
+    </label>
+    <button class="admin-btn" id="btn-th-add" type="button">发布想法</button>
+
+    <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+      <h2 style="margin:0;font-size:1rem">现有想法</h2>
+      <button class="admin-btn ghost" id="btn-th-reload" type="button">刷新</button>
+    </div>
+    <ol class="admin-list" id="thought-list"></ol>
+  </section>
+
   <!-- Theme -->
   {{ $palettes := slice
     (dict "id" "midnight" "name" "深海·琥珀")
@@ -114,6 +151,60 @@
     <button class="admin-btn" id="btn-save-particles" type="button" style="margin-top:1.2rem">保存粒子设置</button>
   </section>
 
+  <!-- Thought tree -->
+  <section class="admin-box" id="box-tree" hidden>
+    <h2>Thoughts 页 · 想法树</h2>
+    <p class="admin-muted">想法页顶部那棵树的画法。当前：<strong id="cur-tree">—</strong></p>
+    <div class="admin-row">
+      <label class="admin-field" style="flex:1"><span>画法</span>
+        <select id="tr-style">
+          <option value="ink">水墨枯枝</option>
+          <option value="vine">单线藤蔓</option>
+          <option value="crown">自然满冠</option>
+          <option value="minimal">极简芽枝</option>
+          <option value="cherry">樱花满树</option>
+        </select>
+      </label>
+      <label class="admin-field" style="flex:1"><span>枝梢</span>
+        <select id="tr-icon">
+          <option value="dot">墨点</option>
+          <option value="leaf">嫩芽</option>
+          <option value="bud">花苞</option>
+          <option value="ring">空心环</option>
+        </select>
+      </label>
+      <label class="admin-field" style="width:130px"><span>描边</span>
+        <select id="tr-stroke">
+          <option value="ink">墨色</option>
+          <option value="accent">主题色</option>
+        </select>
+      </label>
+    </div>
+    <div class="admin-row" style="align-items:flex-end">
+      <label class="admin-field" style="width:150px"><span>形状种子</span>
+        <input type="number" id="tr-seed" min="1" max="9999" step="1" />
+      </label>
+      <button class="admin-btn ghost" id="btn-tr-reseed" type="button">换一棵 ↻</button>
+    </div>
+    <div class="tree-preview" style="max-width:380px;margin:1.2rem auto 0">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <filter id="ink-rough" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="2" seed="7" result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
+      <figure class="spec" id="tree-preview-spec" data-anim="off" data-style="ink" data-icon="dot" data-stroke="ink" data-seed="7">
+        <div class="tree-stage">
+          <svg class="tree-svg rough" viewBox="0 0 440 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><g class="tree-ink"></g></svg>
+          <div class="tips"></div>
+        </div>
+      </figure>
+    </div>
+    <button class="admin-btn" id="btn-save-tree" type="button" style="margin-top:1.2rem">保存想法树</button>
+  </section>
+
   <!-- List -->
   <section class="admin-box" id="box-list" hidden>
     <div class="admin-row admin-row--head">
@@ -127,5 +218,6 @@
 </div>
 
 <script src="/js/particles.js" defer></script>
+<script src="/js/thought-tree.js" defer></script>
 <script src="/js/admin.js" defer></script>
 {{ end }}

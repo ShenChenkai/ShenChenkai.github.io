@@ -2,16 +2,23 @@
   // Canvas particle field. Each dot trembles in its OWN random direction
   // (unlike the old CSS grid where every dot shared one transform), and the
   // field fills whatever element it's sized to (full viewport on /music/,
-  // a small box in /admin/). All knobs are read live from CSS custom
-  // properties on `varSource`, so admin sliders and theme switches take
-  // effect without rebuilding.
+  // a small box in /admin/). All knobs are read from CSS custom properties
+  // on `varSource`, so admin sliders and theme switches take effect live.
   const TAU = Math.PI * 2;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Hard cap so big/retina screens can't spawn 10k+ dots and overwhelm the
+  // render process. Spacing grows past the user's gap once this is hit.
+  const MAX_PARTICLES = 4000;
+  // getComputedStyle + getBoundingClientRect are layout-flushing; reading them
+  // every frame is wasteful. Refresh them a few times a second instead — still
+  // responsive for admin sliders and theme switches.
+  const READ_EVERY = 12;
 
   function ParticleField(canvas, varSource) {
     const ctx = canvas.getContext("2d");
     const start = performance.now();
-    let W = 0, H = 0, particles = [], lastGap = null;
+    let W = 0, H = 0, particles = [], lastGap = null, frameNo = 0;
+    let o = readVars();
 
     function readVars() {
       const cs = getComputedStyle(varSource);
@@ -40,10 +47,17 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    // Spacing that honours the user's gap but never yields more than the cap.
+    function effectiveGap(gap) {
+      const minGap = Math.sqrt((W * H) / MAX_PARTICLES);
+      return Math.max(gap, minGap);
+    }
+
     function buildGrid(gap) {
+      const g = effectiveGap(gap);
       particles = [];
-      for (let y = gap / 2; y < H; y += gap) {
-        for (let x = gap / 2; x < W; x += gap) {
+      for (let y = g / 2; y < H; y += g) {
+        for (let x = g / 2; x < W; x += g) {
           particles.push({
             x, y,
             dir: Math.random() * TAU,          // own tremble direction
@@ -57,14 +71,18 @@
     }
 
     function frame(now) {
-      const o = readVars();
-      const rect = canvas.getBoundingClientRect();
-      if (Math.round(rect.width) !== W || Math.round(rect.height) !== H) {
-        resize();
-        buildGrid(o.gap);
-      } else if (o.gap !== lastGap) {
-        buildGrid(o.gap);
+      // Refresh size + CSS knobs only every few frames.
+      if (frameNo % READ_EVERY === 0) {
+        o = readVars();
+        const rect = canvas.getBoundingClientRect();
+        if (Math.round(rect.width) !== W || Math.round(rect.height) !== H) {
+          resize();
+          buildGrid(o.gap);
+        } else if (o.gap !== lastGap) {
+          buildGrid(o.gap);
+        }
       }
+      frameNo++;
 
       const t = reduce ? 0 : (now - start) / 1000;
       ctx.clearRect(0, 0, W, H);
@@ -98,10 +116,10 @@
     }
 
     resize();
-    buildGrid(readVars().gap);
+    buildGrid(o.gap);
     if (reduce) {
       frame(0);
-      window.addEventListener("resize", () => frame(0));
+      window.addEventListener("resize", () => { resize(); buildGrid(o.gap); frame(0); });
     } else {
       requestAnimationFrame(frame);
     }

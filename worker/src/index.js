@@ -20,6 +20,7 @@ const DEFAULTS = {
   GH_BRANCH: "main",
   DATA_PATH: "data/music.json",
   SITE_PATH: "data/site.json",
+  THOUGHTS_PATH: "data/thoughts.json",
 };
 
 // Known palette ids (must match the CSS in static/css/main.css).
@@ -94,8 +95,46 @@ export default {
           next.defaultPalette = palette;
           next.defaultMode = mode;
           if (body.particles) next.particles = normalizeParticles(body.particles);
+          if (body.tree) next.tree = normalizeTree(body.tree);
           await ghPut(cfg, env, cfg.sitePath, next, sha, "Update site config: " + palette + "/" + mode);
           return json({ ok: true, config: next }, 200, cors);
+        }
+      }
+
+      if (url.pathname === "/api/x-fetch" && request.method === "POST") {
+        requireAuth(request, env);
+        const { url: xUrl } = await request.json();
+        const tweet = await fetchTweet(xUrl);
+        return json({ ok: true, ...tweet }, 200, cors);
+      }
+
+      if (url.pathname === "/api/thoughts") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const { data } = await ghGet(cfg, env, cfg.thoughtsPath);
+          return json({ ok: true, posts: asPosts(data) }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { post } = await request.json();
+          if (!post || !String(post.body || "").trim()) throw httpErr(400, "内容不能为空");
+          const { data, sha } = await ghGet(cfg, env, cfg.thoughtsPath);
+          const posts = asPosts(data);
+          const item = normalizeThought(post);
+          posts.unshift(item);
+          await ghPut(cfg, env, cfg.thoughtsPath, { posts }, sha, "Add thought" + (item.title ? ": " + item.title : ""));
+          return json({ ok: true, posts }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          const { id } = await request.json();
+          const { data, sha } = await ghGet(cfg, env, cfg.thoughtsPath);
+          const posts = asPosts(data);
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条想法");
+          const removed = posts.splice(idx, 1)[0];
+          await ghPut(cfg, env, cfg.thoughtsPath, { posts }, sha, "Remove thought: " + (removed.title || removed.id));
+          return json({ ok: true, posts }, 200, cors);
         }
       }
 
@@ -115,6 +154,7 @@ function config(env) {
     branch: env.GH_BRANCH || DEFAULTS.GH_BRANCH,
     path: env.DATA_PATH || DEFAULTS.DATA_PATH,
     sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
+    thoughtsPath: env.THOUGHTS_PATH || DEFAULTS.THOUGHTS_PATH,
   };
 }
 
@@ -140,12 +180,27 @@ function normalizeParticles(p) {
   };
 }
 
+const TREE_STYLES = ["ink", "vine", "crown", "minimal", "cherry"];
+const TREE_ICONS = ["dot", "leaf", "bud", "ring"];
+const TREE_STROKES = ["ink", "accent"];
+
+function normalizeTree(t) {
+  t = t || {};
+  return {
+    style: TREE_STYLES.includes(t.style) ? t.style : "ink",
+    icon: TREE_ICONS.includes(t.icon) ? t.icon : "dot",
+    stroke: TREE_STROKES.includes(t.stroke) ? t.stroke : "ink",
+    seed: Math.round(clampNum(t.seed, 1, 9999, 7)),
+  };
+}
+
 function normalizeConfig(data) {
   const d = data || {};
   return {
     defaultPalette: d.defaultPalette || "midnight",
     defaultMode: d.defaultMode === "light" ? "light" : "dark",
     particles: normalizeParticles(d.particles),
+    tree: normalizeTree(d.tree),
   };
 }
 
@@ -187,6 +242,69 @@ function normalizeAlbum(a) {
     cover: String(a.cover || "").trim(),
     link: String(a.link || "").trim() || "#",
   };
+}
+
+// ── thoughts ────────────────────────────────────────────────
+function asPosts(data) {
+  return data && Array.isArray(data.posts) ? data.posts : [];
+}
+
+function normalizeThought(p) {
+  const type = p.type === "long" ? "long" : "short";
+  return {
+    id: String(p.id || "").trim() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+    type,
+    date: String(p.date || "").trim() || new Date().toISOString(),
+    title: type === "long" ? String(p.title || "").trim() : "",
+    body: String(p.body || "").trim(),
+    source: p.source === "x" ? "x" : "admin",
+    xUrl: String(p.xUrl || "").trim(),
+  };
+}
+
+// ── X / Twitter text fetch (syndication endpoint, no auth) ───
+// Pulls the post's text. Replies are not exposed by this public
+// endpoint, so `replies` is best-effort and usually empty.
+async function fetchTweet(xUrl) {
+  if (!xUrl) throw httpErr(400, "请提供 X 链接");
+  const id = extractTweetId(xUrl);
+  if (!id) throw httpErr(400, "无法从链接解析推文 ID");
+
+  const api = `https://cdn.syndication.twimg.com/tweet-result?id=${id}&lang=en&token=${tweetToken(id)}`;
+  const res = await fetch(api, {
+    headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" },
+  });
+  if (res.status === 404) throw httpErr(404, "推文不存在或不可见（可能是私密账号）");
+  if (!res.ok) throw httpErr(502, "X 接口请求失败 " + res.status);
+  const data = await res.json().catch(() => null);
+  if (!data || data.text == null) throw httpErr(502, "X 接口未返回文本");
+
+  // Trim trailing media t.co links using display_text_range when present.
+  let text = String(data.text);
+  const range = data.display_text_range;
+  if (Array.isArray(range) && range.length === 2) {
+    text = Array.from(text).slice(range[0], range[1]).join("");
+  }
+  const author = data.user ? (data.user.name || data.user.screen_name || "") : "";
+  const screen = data.user && data.user.screen_name ? data.user.screen_name : "";
+  return {
+    text: text.trim(),
+    replies: [],
+    author,
+    xUrl: screen ? `https://x.com/${screen}/status/${id}` : String(xUrl).trim(),
+  };
+}
+
+function extractTweetId(u) {
+  const s = String(u || "").trim();
+  const m = s.match(/status(?:es)?\/(\d+)/);
+  if (m) return m[1];
+  return /^\d+$/.test(s) ? s : "";
+}
+
+// Anti-abuse token the embed widget derives from the tweet id.
+function tweetToken(id) {
+  return ((Number(id) / 1e15) * Math.PI).toString(36).replace(/(0+|\.)/g, "");
 }
 
 // ── metadata resolution ─────────────────────────────────────

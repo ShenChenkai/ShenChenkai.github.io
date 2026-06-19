@@ -47,12 +47,15 @@
       $("conn-status").textContent = "✅ 已连接";
       $("conn-status").classList.add("ok");
       $("box-add").hidden = false;
+      $("box-thoughts").hidden = false;
       $("box-theme").hidden = false;
       $("box-particles").hidden = false;
+      $("box-tree").hidden = false;
       $("box-list").hidden = false;
       log("连接成功。");
       loadConfig();
       reload();
+      reloadThoughts();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
       $("conn-status").classList.remove("ok");
@@ -99,8 +102,56 @@
       PKEYS.forEach((k) => { $("p-" + k).value = p[k] != null ? p[k] : defs[k]; });
       applyParticlePreview();
       startParticlePreview();
+
+      const tr = config.tree || {};
+      $("tr-style").value = tr.style || "ink";
+      $("tr-icon").value = tr.icon || "dot";
+      $("tr-stroke").value = tr.stroke || "ink";
+      $("tr-seed").value = tr.seed || 7;
+      renderTreePreview();
     } catch (e) {
       log("读取站点配置失败：" + e.message, "error");
+    }
+  }
+
+  // ── thought tree ──────────────────────────────────────────
+  function gatherTree() {
+    return {
+      style: $("tr-style").value,
+      icon: $("tr-icon").value,
+      stroke: $("tr-stroke").value,
+      seed: Math.max(1, Math.min(9999, Math.round(Number($("tr-seed").value) || 7))),
+    };
+  }
+
+  function renderTreePreview() {
+    const spec = $("tree-preview-spec");
+    const t = gatherTree();
+    spec.dataset.style = t.style;
+    spec.dataset.icon = t.icon;
+    spec.dataset.stroke = t.stroke;
+    spec.dataset.seed = t.seed;
+    spec.querySelector(".tree-svg").classList.toggle("rough", t.style === "ink");
+    $("cur-tree").textContent = t.style + " · " + t.icon + " · " + t.stroke;
+    if (window.ThoughtTree) window.ThoughtTree.mount(spec);
+  }
+
+  function reseedTree() {
+    $("tr-seed").value = 1 + Math.floor(Math.random() * 9999);
+    renderTreePreview();
+  }
+
+  async function saveTree() {
+    try {
+      log("保存想法树…");
+      await api("/api/config", "POST", {
+        defaultPalette: $("t-palette").value,
+        defaultMode: $("t-mode").value,
+        tree: gatherTree(),
+      });
+      log("✅ 想法树已保存，约 1 分钟后上线。");
+    } catch (e) {
+      log("保存失败：" + e.message, "error");
     }
   }
 
@@ -236,6 +287,90 @@
     });
   }
 
+  // ── thoughts ──────────────────────────────────────────────
+  function toggleThoughtTitle() {
+    $("th-title-field").hidden = $("th-type").value !== "long";
+  }
+
+  async function fetchTweetText() {
+    const xUrl = ($("th-xurl").value || "").trim();
+    if (!xUrl) { log("请先粘贴 X 链接。", "error"); return; }
+    try {
+      log("抓取 X 正文：" + xUrl);
+      const r = await api("/api/x-fetch", "POST", { url: xUrl });
+      if (r.text) $("th-body").value = r.text;
+      $("th-xurl").value = r.xUrl || xUrl;
+      const reply = r.replies && r.replies.length ? "，回复 " + r.replies.length + " 条" : "（回复未获取到）";
+      log("✅ 抓取成功" + (r.author ? "（@" + r.author + "）" : "") + reply + "。");
+    } catch (e) {
+      log("抓取失败：" + e.message, "error");
+    }
+  }
+
+  async function addThought() {
+    const type = $("th-type").value === "long" ? "long" : "short";
+    const xUrl = ($("th-xurl").value || "").trim();
+    const post = {
+      type,
+      title: type === "long" ? ($("th-title").value || "").trim() : "",
+      body: ($("th-body").value || "").trim(),
+      source: xUrl ? "x" : "admin",
+      xUrl,
+    };
+    if (!post.body) { log("正文必填。", "error"); return; }
+    try {
+      log("发布想法…");
+      const { posts } = await api("/api/thoughts", "POST", { post });
+      log("✅ 已发布，约 1 分钟后上线。");
+      ["th-title", "th-body", "th-xurl"].forEach((id) => ($(id).value = ""));
+      renderThoughts(posts);
+    } catch (e) {
+      log("发布失败：" + e.message, "error");
+    }
+  }
+
+  async function reloadThoughts() {
+    try {
+      const { posts } = await api("/api/thoughts", "GET");
+      renderThoughts(posts);
+      log("已加载 " + posts.length + " 条想法。");
+    } catch (e) {
+      log("加载想法失败：" + e.message, "error");
+    }
+  }
+
+  async function deleteThought(id, label) {
+    if (!confirm("删除「" + label + "」？")) return;
+    try {
+      const { posts } = await api("/api/thoughts", "DELETE", { id });
+      log("已删除想法。");
+      renderThoughts(posts);
+    } catch (e) {
+      log("删除失败：" + e.message, "error");
+    }
+  }
+
+  function renderThoughts(posts) {
+    const list = $("thought-list");
+    list.innerHTML = "";
+    if (!posts || !posts.length) { list.innerHTML = '<li class="admin-muted">（空）</li>'; return; }
+    posts.forEach((p) => {
+      const li = document.createElement("li");
+      li.className = "admin-list-item";
+      const date = (p.date || "").slice(0, 10);
+      const snippet = p.title || (p.body || "").replace(/\s+/g, " ").slice(0, 40);
+      const meta = document.createElement("span");
+      meta.textContent = (p.type === "long" ? "📄 " : "💬 ") + snippet + (p.source === "x" ? " · X" : "") + "　" + date;
+      const del = document.createElement("button");
+      del.className = "admin-btn ghost small";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteThought(p.id, snippet));
+      li.appendChild(meta);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
   $("btn-connect").addEventListener("click", connect);
   $("btn-resolve").addEventListener("click", resolve);
   $("btn-add").addEventListener("click", addAlbum);
@@ -246,4 +381,12 @@
   $("t-mode").addEventListener("change", updateThemePreview);
   $("btn-save-particles").addEventListener("click", saveParticles);
   PKEYS.forEach((k) => $("p-" + k).addEventListener("input", applyParticlePreview));
+  ["tr-style", "tr-icon", "tr-stroke"].forEach((id) => $(id).addEventListener("change", renderTreePreview));
+  $("tr-seed").addEventListener("input", renderTreePreview);
+  $("btn-tr-reseed").addEventListener("click", reseedTree);
+  $("btn-save-tree").addEventListener("click", saveTree);
+  $("th-type").addEventListener("change", toggleThoughtTitle);
+  $("btn-th-fetch").addEventListener("click", fetchTweetText);
+  $("btn-th-add").addEventListener("click", addThought);
+  $("btn-th-reload").addEventListener("click", reloadThoughts);
 })();

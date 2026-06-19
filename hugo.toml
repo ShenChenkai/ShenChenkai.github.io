@@ -14,8 +14,8 @@ enableEmoji = true
     url = "/tech/"
     weight = 1
   [[menu.main]]
-    name = "Essays"
-    url = "/essays/"
+    name = "Thoughts"
+    url = "/thoughts/"
     weight = 2
   [[menu.main]]
     name = "Photos"

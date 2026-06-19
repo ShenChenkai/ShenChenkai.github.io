@@ -1,0 +1,4 @@
+---
+title: "Thoughts"
+layout: "single"
+---
