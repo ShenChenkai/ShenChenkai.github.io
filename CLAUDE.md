@@ -29,7 +29,6 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   ├── music/index.md            #   /music/    音乐墙页（layout: music/single）
 │   ├── thoughts/index.md         #   /thoughts/ 想法页（layout: thoughts/single）
 │   ├── admin/index.md            #   /admin/    后台（不进菜单/sitemap；layout: admin/single）
-│   ├── lab/index.md              #   /lab/      想法树画法画廊（6 种程序生成的树；layout: lab/single）
 │   ├── test/index.md             #   /test/     配色测试页（layout: test/single）
 │   └── tech/_index.md            #   /tech/     二级结构：分类(section) → 笔记(page)，如 content/tech/go/variables.md
 │                                  #     每个分类一个 _index.md（标题=分类名）；文章可手写 .md，也可在 /admin/ 里增删改
@@ -38,7 +37,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
 │   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,link}]}——后台管理，勿手改
 │   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,source,xUrl}]}——后台管理
-│   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...},tree{style,icon,stroke,seed}}——后台管理
+│   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...}}——后台管理
 │
 ├── themes/chenkai-space/
 │   ├── layouts/
@@ -52,22 +51,20 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   │   ├── header.html        # 顶部导航 + Music 彩色入口块（手绘音符）
 │   │   │   └── footer.html        # 页脚
 │   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
-│   │   ├── thoughts/single.html   # 想法页：顶部按 site.tree 配置渲染想法树（hover 看想法/点跳全文）+ 下方倒序列表
-│   │   ├── lab/single.html        # 想法树画廊：6 种树并排展示（program 生成，引 thought-tree.js）
+│   │   ├── thoughts/single.html   # 想法页：想法倒序列表（长想法带标题 / 短碎念 / 从 X 抓取的帖子）
 │   │   ├── admin/single.html      # 后台 UI：未连接时显示独立登录界面（admin-login）；连接后切到仪表盘（admin-shell）——
-│   │   │                         #   侧栏固定贴最左边（专辑/想法/Tech 笔记/主题色/粒子背景/想法树 + 断开连接），右侧对应管理面板
+│   │   │                         #   侧栏固定贴最左边（专辑/想法/Tech 笔记/主题色/粒子背景 + 断开连接），右侧对应管理面板
 │   │   ├── test/single.html       # 配色卡片预览页
 │   │   └── tech/                  # 技术文章 section（唯一以独立 markdown 文件存内容的 section，其余均单个 data/*.json）
 │   │       ├── list.html          #   /tech/ 与 /tech/<分类>/ 共用：根用 .Sections 列分类，分类页用 .RegularPages 列笔记
 │   │       │                      #     （非根页面才显示分类标题；.Kind=="page" 才显示日期），无内容时显示占位文案
 │   │       └── single.html        #   /tech/<分类>/<slug>/  单篇文章：标题=该 md 的 front matter title，正文居中（.single-post）
 │   └── static/
-│       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、粒子动效、想法树、后台
+│       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、粒子动效、Tech 文章排版、后台
 │       └── js/
 │           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
 │           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
-│           ├── thought-tree.js    # 想法树生成器：递归生长（根粗梢细/不对称/分叉），lab画廊·admin预览·thoughts页共用
-│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/想法树/Tech分类+笔记增删改）
+│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/Tech分类+笔记增删改）
 │
 └── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
     ├── src/index.js               # Worker 主逻辑：鉴权、Apple/QQ 元数据解析、X 帖子抓取、想法增删、Tech 分类+笔记增删改
@@ -88,7 +85,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 
 ## 四、常用命令
 ```bash
-hugo server            # 本地预览（含 /thoughts/ /music/ /admin/ /lab/ /test/）
+hugo server            # 本地预览（含 /thoughts/ /music/ /admin/ /tech/ /test/）
 hugo                   # 构建到 public/
 cd worker && wrangler deploy   # 重新部署后端
 ```

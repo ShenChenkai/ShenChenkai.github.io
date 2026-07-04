@@ -38,7 +38,7 @@
   }
 
   // ── sidebar section switching ─────────────────────────────
-  const SECTIONS = ["albums", "thoughts", "notes", "theme", "particles", "tree"];
+  const SECTIONS = ["albums", "thoughts", "notes", "theme", "particles"];
 
   function selectSection(name) {
     SECTIONS.forEach((s) => {
@@ -133,56 +133,8 @@
       PKEYS.forEach((k) => { $("p-" + k).value = p[k] != null ? p[k] : defs[k]; });
       applyParticlePreview();
       startParticlePreview();
-
-      const tr = config.tree || {};
-      $("tr-style").value = tr.style || "ink";
-      $("tr-icon").value = tr.icon || "dot";
-      $("tr-stroke").value = tr.stroke || "ink";
-      $("tr-seed").value = tr.seed || 7;
-      renderTreePreview();
     } catch (e) {
       log("读取站点配置失败：" + e.message, "error");
-    }
-  }
-
-  // ── thought tree ──────────────────────────────────────────
-  function gatherTree() {
-    return {
-      style: $("tr-style").value,
-      icon: $("tr-icon").value,
-      stroke: $("tr-stroke").value,
-      seed: Math.max(1, Math.min(9999, Math.round(Number($("tr-seed").value) || 7))),
-    };
-  }
-
-  function renderTreePreview() {
-    const spec = $("tree-preview-spec");
-    const t = gatherTree();
-    spec.dataset.style = t.style;
-    spec.dataset.icon = t.icon;
-    spec.dataset.stroke = t.stroke;
-    spec.dataset.seed = t.seed;
-    spec.querySelector(".tree-svg").classList.toggle("rough", t.style === "ink");
-    $("cur-tree").textContent = t.style + " · " + t.icon + " · " + t.stroke;
-    if (window.ThoughtTree) window.ThoughtTree.mount(spec);
-  }
-
-  function reseedTree() {
-    $("tr-seed").value = 1 + Math.floor(Math.random() * 9999);
-    renderTreePreview();
-  }
-
-  async function saveTree() {
-    try {
-      log("保存想法树…");
-      await api("/api/config", "POST", {
-        defaultPalette: $("t-palette").value,
-        defaultMode: $("t-mode").value,
-        tree: gatherTree(),
-      });
-      log("✅ 想法树已保存，约 1 分钟后上线。");
-    } catch (e) {
-      log("保存失败：" + e.message, "error");
     }
   }
 
@@ -605,10 +557,6 @@
   $("t-mode").addEventListener("change", updateThemePreview);
   $("btn-save-particles").addEventListener("click", saveParticles);
   PKEYS.forEach((k) => $("p-" + k).addEventListener("input", applyParticlePreview));
-  ["tr-style", "tr-icon", "tr-stroke"].forEach((id) => $(id).addEventListener("change", renderTreePreview));
-  $("tr-seed").addEventListener("input", renderTreePreview);
-  $("btn-tr-reseed").addEventListener("click", reseedTree);
-  $("btn-save-tree").addEventListener("click", saveTree);
   $("th-type").addEventListener("change", toggleThoughtTitle);
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);

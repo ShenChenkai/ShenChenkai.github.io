@@ -96,7 +96,6 @@ export default {
           next.defaultPalette = palette;
           next.defaultMode = mode;
           if (body.particles) next.particles = normalizeParticles(body.particles);
-          if (body.tree) next.tree = normalizeTree(body.tree);
           await ghPut(cfg, env, cfg.sitePath, next, sha, "Update site config: " + palette + "/" + mode);
           return json({ ok: true, config: next }, 200, cors);
         }
@@ -246,27 +245,12 @@ function normalizeParticles(p) {
   };
 }
 
-const TREE_STYLES = ["ink", "vine", "crown", "minimal", "cherry"];
-const TREE_ICONS = ["dot", "leaf", "bud", "ring"];
-const TREE_STROKES = ["ink", "accent"];
-
-function normalizeTree(t) {
-  t = t || {};
-  return {
-    style: TREE_STYLES.includes(t.style) ? t.style : "ink",
-    icon: TREE_ICONS.includes(t.icon) ? t.icon : "dot",
-    stroke: TREE_STROKES.includes(t.stroke) ? t.stroke : "ink",
-    seed: Math.round(clampNum(t.seed, 1, 9999, 7)),
-  };
-}
-
 function normalizeConfig(data) {
   const d = data || {};
   return {
     defaultPalette: d.defaultPalette || "midnight",
     defaultMode: d.defaultMode === "light" ? "light" : "dark",
     particles: normalizeParticles(d.particles),
-    tree: normalizeTree(d.tree),
   };
 }
 

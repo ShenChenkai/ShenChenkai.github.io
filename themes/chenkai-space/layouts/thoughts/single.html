@@ -9,41 +9,6 @@
   {{ $posts := slice }}
   {{ with $data }}{{ with .posts }}{{ $posts = sort . "date" "desc" }}{{ end }}{{ end }}
 
-  {{/* Tree style is chosen in /admin/ and stored in data/site.json. */}}
-  {{ $t := dict }}
-  {{ with (index hugo.Data "site") }}{{ with .tree }}{{ $t = . }}{{ end }}{{ end }}
-  {{ $style := or $t.style "ink" }}
-  {{ $icon := or $t.icon "dot" }}
-  {{ $stroke := or $t.stroke "ink" }}
-  {{ $seed := or $t.seed 7 }}
-
-  {{ if $posts }}
-  <div class="tree-hero">
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-      <defs>
-        <filter id="ink-rough" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="2" seed="7" result="n" />
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </defs>
-    </svg>
-    <figure class="spec" data-real="1" data-style="{{ $style }}" data-icon="{{ $icon }}" data-stroke="{{ $stroke }}" data-seed="{{ $seed }}">
-      <div class="tree-stage">
-        <svg class="tree-svg{{ if eq $style "ink" }} rough{{ end }}" viewBox="0 0 440 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><g class="tree-ink"></g></svg>
-        <div class="tips"></div>
-      </div>
-    </figure>
-    <p class="tree-hint">把光标移到枝梢上看想法 · 点一下跳到下方全文 ↓</p>
-  </div>
-
-  {{ $items := slice }}
-  {{ range $posts }}
-    {{ $snip := .body | markdownify | plainify | replaceRE "\\s+" " " | truncate 64 }}
-    {{ $items = $items | append (dict "id" .id "date" (dateFormat "2006 · 01" .date) "title" (or .title "") "snip" $snip "src" .source "x" (or .xUrl "")) }}
-  {{ end }}
-  <script>window.__TREE_THOUGHTS__ = {{ $items | jsonify | safeJS }};</script>
-  {{ end }}
-
   <div class="thoughts-feed">
     {{ range $posts }}
     <article id="t-{{ .id }}" class="thought thought--{{ default "short" .type }}{{ if eq .source "x" }} thought--x{{ end }}">
@@ -59,15 +24,4 @@
 
   <p class="thoughts-empty"{{ if $posts }} hidden{{ end }}>还没有想法，去后台写一条吧。</p>
 </div>
-
-<style>
-.tree-hero { margin: 0.5rem auto 2.5rem; max-width: 600px; }
-.tree-hint { text-align: center; color: var(--muted); font-size: 0.82rem; margin-top: 0.9rem; }
-.thought.flash { animation: thought-flash 1.3s ease; }
-@keyframes thought-flash {
-  0%, 100% { background: transparent; }
-  18% { background: color-mix(in srgb, var(--accent) 13%, transparent); }
-}
-</style>
-<script src="/js/thought-tree.js" defer></script>
 {{ end }}
