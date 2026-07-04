@@ -21,6 +21,7 @@ const DEFAULTS = {
   DATA_PATH: "data/music.json",
   SITE_PATH: "data/site.json",
   THOUGHTS_PATH: "data/thoughts.json",
+  TECH_DIR: "content/tech",
 };
 
 // Known palette ids (must match the CSS in static/css/main.css).
@@ -138,6 +139,41 @@ export default {
         }
       }
 
+      if (url.pathname === "/api/notes") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const notes = await listNotes(cfg, env);
+          return json({ ok: true, notes }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { note } = await request.json();
+          const created = await createNote(cfg, env, note || {});
+          return json({ ok: true, note: created }, 200, cors);
+        }
+      }
+
+      if (url.pathname.startsWith("/api/notes/")) {
+        requireAuth(request, env);
+        const cfg = config(env);
+        const slug = decodeURIComponent(url.pathname.slice("/api/notes/".length));
+
+        if (request.method === "GET") {
+          const note = await getNote(cfg, env, slug);
+          return json({ ok: true, note }, 200, cors);
+        }
+        if (request.method === "PUT") {
+          const { note } = await request.json();
+          const updated = await updateNote(cfg, env, slug, note || {});
+          return json({ ok: true, note: updated }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          await deleteNote(cfg, env, slug);
+          return json({ ok: true }, 200, cors);
+        }
+      }
+
       return json({ error: "Not found" }, 404, cors);
     } catch (e) {
       const status = e && e.status ? e.status : 500;
@@ -155,6 +191,7 @@ function config(env) {
     path: env.DATA_PATH || DEFAULTS.DATA_PATH,
     sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
     thoughtsPath: env.THOUGHTS_PATH || DEFAULTS.THOUGHTS_PATH,
+    techDir: env.TECH_DIR || DEFAULTS.TECH_DIR,
   };
 }
 
@@ -443,6 +480,151 @@ async function ghPut(cfg, env, path, data, sha, message) {
     throw httpErr(502, "提交 GitHub 失败 " + res.status + " " + t.slice(0, 160));
   }
   return res.json();
+}
+
+// ── GitHub raw-file / directory I/O (for content/tech/*.md) ─
+async function ghGetText(cfg, env, path) {
+  if (!env.GITHUB_TOKEN) throw httpErr(500, "服务端未设置 GITHUB_TOKEN");
+  const res = await fetch(ghUrl(cfg, path) + "?ref=" + encodeURIComponent(cfg.branch), {
+    headers: ghHeaders(env),
+  });
+  if (res.status === 404) return { text: null, sha: null }; // file not created yet
+  if (!res.ok) throw httpErr(502, "读取 GitHub 文件失败 " + res.status);
+  const file = await res.json();
+  return { text: b64decode(file.content), sha: file.sha };
+}
+
+async function ghPutText(cfg, env, path, text, sha, message) {
+  const body = { message, content: b64encode(text), branch: cfg.branch };
+  if (sha) body.sha = sha; // omit to create a new file
+  const res = await fetch(ghUrl(cfg, path), {
+    method: "PUT",
+    headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw httpErr(502, "提交 GitHub 失败 " + res.status + " " + t.slice(0, 160));
+  }
+  return res.json();
+}
+
+async function ghDeleteFile(cfg, env, path, sha, message) {
+  const res = await fetch(ghUrl(cfg, path), {
+    method: "DELETE",
+    headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+    body: JSON.stringify({ message, sha, branch: cfg.branch }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw httpErr(502, "删除 GitHub 文件失败 " + res.status + " " + t.slice(0, 160));
+  }
+  return res.json();
+}
+
+async function ghListDir(cfg, env, path) {
+  if (!env.GITHUB_TOKEN) throw httpErr(500, "服务端未设置 GITHUB_TOKEN");
+  const res = await fetch(ghUrl(cfg, path) + "?ref=" + encodeURIComponent(cfg.branch), {
+    headers: ghHeaders(env),
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) throw httpErr(502, "读取 GitHub 目录失败 " + res.status);
+  const list = await res.json();
+  return Array.isArray(list) ? list : [];
+}
+
+// ── tech notes (content/tech/*.md) ──────────────────────────
+function validSlug(slug) {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(String(slug || "")) && slug !== "_index";
+}
+
+function yamlQuote(s) {
+  return '"' + String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+}
+
+function parseNote(raw, slug) {
+  const m = String(raw || "").match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!m) return { slug, title: slug, date: "", draft: false, body: String(raw || "").trim() };
+  const fm = {};
+  m[1].split(/\r?\n/).forEach((line) => {
+    const mm = line.match(/^(\w+):\s*(.*)$/);
+    if (!mm) return;
+    let val = mm[2].trim();
+    if (/^".*"$/.test(val)) val = val.slice(1, -1).replace(/\\(["\\])/g, "$1");
+    fm[mm[1]] = val;
+  });
+  return {
+    slug,
+    title: fm.title || slug,
+    date: fm.date || "",
+    draft: fm.draft === "true",
+    body: m[2].replace(/^\n+/, "").trim(),
+  };
+}
+
+function buildNote(n) {
+  const title = String((n && n.title) || "").trim();
+  const date = String((n && n.date) || "").trim() || new Date().toISOString().slice(0, 10);
+  const draft = !!(n && n.draft);
+  const body = String((n && n.body) || "").trim();
+  return `---\ntitle: ${yamlQuote(title)}\ndate: ${date}\ndraft: ${draft}\n---\n\n${body}\n`;
+}
+
+function notePath(cfg, slug) {
+  return `${cfg.techDir}/${slug}.md`;
+}
+
+async function listNotes(cfg, env) {
+  const files = await ghListDir(cfg, env, cfg.techDir);
+  const mdFiles = files.filter((f) => f.type === "file" && /\.md$/.test(f.name) && f.name !== "_index.md");
+  const notes = await Promise.all(
+    mdFiles.map(async (f) => {
+      const slug = f.name.replace(/\.md$/, "");
+      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${f.name}`);
+      const n = parseNote(text, slug);
+      return { slug: n.slug, title: n.title, date: n.date, draft: n.draft };
+    })
+  );
+  notes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return notes;
+}
+
+async function getNote(cfg, env, slug) {
+  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+  const { text } = await ghGetText(cfg, env, notePath(cfg, slug));
+  if (text == null) throw httpErr(404, "未找到该篇文章");
+  return parseNote(text, slug);
+}
+
+async function createNote(cfg, env, note) {
+  const slug = String(note.slug || "").trim().toLowerCase();
+  if (!validSlug(slug)) throw httpErr(400, "路径只能包含小写字母、数字和连字符");
+  if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
+  const path = notePath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (existing.sha) throw httpErr(400, "该路径已存在，换一个 slug");
+  const content = buildNote(note);
+  await ghPutText(cfg, env, path, content, null, "Add tech note: " + note.title);
+  return parseNote(content, slug);
+}
+
+async function updateNote(cfg, env, slug, note) {
+  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+  if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
+  const path = notePath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该篇文章");
+  const content = buildNote(note);
+  await ghPutText(cfg, env, path, content, existing.sha, "Update tech note: " + note.title);
+  return parseNote(content, slug);
+}
+
+async function deleteNote(cfg, env, slug) {
+  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+  const path = notePath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该篇文章");
+  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech note: " + slug);
 }
 
 // ── unicode-safe base64 ─────────────────────────────────────

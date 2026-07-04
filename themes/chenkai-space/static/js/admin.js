@@ -37,6 +37,31 @@
     return data;
   }
 
+  // ── sidebar section switching ─────────────────────────────
+  const SECTIONS = ["albums", "thoughts", "notes", "theme", "particles", "tree"];
+
+  function selectSection(name) {
+    SECTIONS.forEach((s) => {
+      $("panel-" + s).hidden = s !== name;
+      $("nav-" + s).classList.toggle("active", s === name);
+    });
+  }
+
+  SECTIONS.forEach((s) => {
+    $("nav-" + s).addEventListener("click", () => selectSection(s));
+  });
+
+  // ── login / dashboard ─────────────────────────────────────
+  function showLogin() {
+    $("admin-shell").hidden = true;
+    $("admin-login").hidden = false;
+  }
+
+  function showDashboard() {
+    $("admin-login").hidden = true;
+    $("admin-shell").hidden = false;
+  }
+
   // ── connect ───────────────────────────────────────────────
   async function connect() {
     try {
@@ -46,21 +71,28 @@
       sessionStorage.setItem(PWD_KEY, password());
       $("conn-status").textContent = "✅ 已连接";
       $("conn-status").classList.add("ok");
-      $("box-add").hidden = false;
-      $("box-thoughts").hidden = false;
-      $("box-theme").hidden = false;
-      $("box-particles").hidden = false;
-      $("box-tree").hidden = false;
-      $("box-list").hidden = false;
+      showDashboard();
+      selectSection("albums");
       log("连接成功。");
       loadConfig();
       reload();
       reloadThoughts();
+      resetNoteForm();
+      reloadNotes();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
       $("conn-status").classList.remove("ok");
       log(e.message, "error");
     }
+  }
+
+  function disconnect() {
+    sessionStorage.removeItem(PWD_KEY);
+    $("admin-pwd").value = "";
+    $("conn-status").textContent = "未连接";
+    $("conn-status").classList.remove("ok");
+    logEl.textContent = "";
+    showLogin();
   }
 
   // ── resolve metadata from a music URL ─────────────────────
@@ -371,7 +403,130 @@
     });
   }
 
+  // ── tech notes ────────────────────────────────────────────
+  let editingSlug = null;
+  const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function resetNoteForm() {
+    editingSlug = null;
+    $("n-title").value = "";
+    $("n-slug").value = "";
+    $("n-slug").disabled = false;
+    $("n-date").value = todayStr();
+    $("n-draft").checked = false;
+    $("n-body").value = "";
+    $("btn-n-save").textContent = "发布笔记";
+    $("btn-n-cancel").hidden = true;
+  }
+
+  function gatherNote() {
+    return {
+      title: ($("n-title").value || "").trim(),
+      slug: ($("n-slug").value || "").trim().toLowerCase(),
+      date: ($("n-date").value || "").trim(),
+      draft: $("n-draft").checked,
+      body: ($("n-body").value || "").trim(),
+    };
+  }
+
+  async function saveNote() {
+    const note = gatherNote();
+    if (!note.title) { log("标题必填。", "error"); return; }
+    if (!note.body) { log("正文必填。", "error"); return; }
+    if (!editingSlug && !SLUG_RE.test(note.slug)) {
+      log("路径只能包含小写字母、数字和连字符。", "error");
+      return;
+    }
+    try {
+      if (editingSlug) {
+        log("更新笔记：" + note.title);
+        await api("/api/notes/" + encodeURIComponent(editingSlug), "PUT", { note });
+        log("✅ 已更新，约 1 分钟后上线。");
+      } else {
+        log("发布笔记：" + note.title);
+        await api("/api/notes", "POST", { note });
+        log("✅ 已发布，约 1 分钟后上线。");
+      }
+      resetNoteForm();
+      reloadNotes();
+    } catch (e) {
+      log((editingSlug ? "更新失败：" : "发布失败：") + e.message, "error");
+    }
+  }
+
+  async function reloadNotes() {
+    try {
+      const { notes } = await api("/api/notes", "GET");
+      renderNotes(notes);
+      log("已加载 " + notes.length + " 篇笔记。");
+    } catch (e) {
+      log("加载笔记失败：" + e.message, "error");
+    }
+  }
+
+  async function editNote(slug) {
+    try {
+      const { note } = await api("/api/notes/" + encodeURIComponent(slug), "GET");
+      editingSlug = slug;
+      $("n-title").value = note.title || "";
+      $("n-slug").value = note.slug;
+      $("n-slug").disabled = true;
+      $("n-date").value = note.date || todayStr();
+      $("n-draft").checked = !!note.draft;
+      $("n-body").value = note.body || "";
+      $("btn-n-save").textContent = "保存修改";
+      $("btn-n-cancel").hidden = false;
+      $("panel-notes").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      log("读取笔记失败：" + e.message, "error");
+    }
+  }
+
+  async function deleteNoteItem(slug, title) {
+    if (!confirm("删除「" + title + "」？")) return;
+    try {
+      await api("/api/notes/" + encodeURIComponent(slug), "DELETE");
+      log("已删除：" + title);
+      if (editingSlug === slug) resetNoteForm();
+      reloadNotes();
+    } catch (e) {
+      log("删除失败：" + e.message, "error");
+    }
+  }
+
+  function renderNotes(notes) {
+    const list = $("note-list");
+    list.innerHTML = "";
+    if (!notes || !notes.length) { list.innerHTML = '<li class="admin-muted">（空）</li>'; return; }
+    notes.forEach((n) => {
+      const li = document.createElement("li");
+      li.className = "admin-list-item";
+      const meta = document.createElement("span");
+      meta.textContent = (n.draft ? "📝 [草稿] " : "") + n.title + "　" + (n.date || "");
+      const actions = document.createElement("span");
+      actions.className = "admin-list-actions";
+      const edit = document.createElement("button");
+      edit.className = "admin-btn ghost small";
+      edit.textContent = "编辑";
+      edit.addEventListener("click", () => editNote(n.slug));
+      const del = document.createElement("button");
+      del.className = "admin-btn ghost small";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteNoteItem(n.slug, n.title));
+      actions.appendChild(edit);
+      actions.appendChild(del);
+      li.appendChild(meta);
+      li.appendChild(actions);
+      list.appendChild(li);
+    });
+  }
+
   $("btn-connect").addEventListener("click", connect);
+  $("btn-disconnect").addEventListener("click", disconnect);
   $("btn-resolve").addEventListener("click", resolve);
   $("btn-add").addEventListener("click", addAlbum);
   $("btn-reload").addEventListener("click", reload);
@@ -389,4 +544,7 @@
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);
   $("btn-th-reload").addEventListener("click", reloadThoughts);
+  $("btn-n-save").addEventListener("click", saveNote);
+  $("btn-n-cancel").addEventListener("click", resetNoteForm);
+  $("btn-n-reload").addEventListener("click", reloadNotes);
 })();

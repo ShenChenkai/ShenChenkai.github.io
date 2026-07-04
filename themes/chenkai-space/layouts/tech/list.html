@@ -1,0 +1,16 @@
+{{ define "main" }}
+<section class="list-page">
+  {{ if .Pages }}
+  <ul class="post-list">
+    {{ range .Pages }}
+    <li class="post-item">
+      <a href="{{ .Permalink }}">{{ .Title }}</a>
+      <time>{{ .Date.Format "2006-01-02" }}</time>
+    </li>
+    {{ end }}
+  </ul>
+  {{ else }}
+  <p class="post-list-empty">还没有文章，敬请期待。</p>
+  {{ end }}
+</section>
+{{ end }}

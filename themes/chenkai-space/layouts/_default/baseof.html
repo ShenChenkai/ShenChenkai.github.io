@@ -5,7 +5,7 @@
 </head>
 <body>
   {{ partial "header.html" . }}
-  <main class="site-main">
+  <main class="site-main{{ if eq .RelPermalink "/admin/" }} site-main--admin{{ end }}">
     {{ block "main" . }}{{ end }}
   </main>
   {{ partial "footer.html" . }}

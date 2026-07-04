@@ -6,7 +6,7 @@
 
 Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`https://ShenChenkai.github.io/`），仓库 `ShenChenkai/ShenChenkai.github.io`，分支 `main`。
 
-附带一个 **Cloudflare Worker 后端**（`worker/`），为 `/admin/` 后台提供：密码登录、音乐链接元数据自动识别（Apple Music / QQ 音乐）、把内容提交回仓库的 `data/*.json`。
+附带一个 **Cloudflare Worker 后端**（`worker/`），为 `/admin/` 后台提供：密码登录、音乐链接元数据自动识别（Apple Music / QQ 音乐）、把内容提交回仓库的 `data/*.json` 与 `content/tech/*.md`。
 
 ### 技术栈 & 部署链路
 - **Hugo**（extended，本地 v0.162.1）+ 自建主题 `chenkai-space`。
@@ -30,7 +30,10 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   ├── thoughts/index.md         #   /thoughts/ 想法页（layout: thoughts/single）
 │   ├── admin/index.md            #   /admin/    后台（不进菜单/sitemap；layout: admin/single）
 │   ├── lab/index.md              #   /lab/      想法树画法画廊（6 种程序生成的树；layout: lab/single）
-│   └── test/index.md             #   /test/     配色测试页（layout: test/single）
+│   ├── test/index.md             #   /test/     配色测试页（layout: test/single）
+│   └── tech/_index.md            #   /tech/     技术文章列表（section）；文章是独立 .md 文件，可手写（hugo new tech/xxx.md）
+│                                  #     也可在 /admin/ 里增删改——两条路径都写同一批文件，谁改了都以仓库最新为准
+│                                  #     标题取各篇 markdown 的 front matter title，不再有硬编码的 "Tech" 大标题
 │
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
 │   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,link}]}——后台管理，勿手改
@@ -40,7 +43,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 ├── themes/chenkai-space/
 │   ├── layouts/
 │   │   ├── _default/
-│   │   │   ├── baseof.html        # 全站骨架（<html><head><body>）
+│   │   │   ├── baseof.html        # 全站骨架（<html><head><body>）；.RelPermalink 为 /admin/ 时给 <main> 加 site-main--admin（撑满宽度，不受 900px 限制）
 │   │   │   ├── list.html          # 列表页模板
 │   │   │   └── single.html        # 单页默认模板
 │   │   ├── index.html             # 首页（hero + tagline）
@@ -51,18 +54,22 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
 │   │   ├── thoughts/single.html   # 想法页：顶部按 site.tree 配置渲染想法树（hover 看想法/点跳全文）+ 下方倒序列表
 │   │   ├── lab/single.html        # 想法树画廊：6 种树并排展示（program 生成，引 thought-tree.js）
-│   │   ├── admin/single.html      # 后台 UI：连接 / 加专辑 / 想法 / 主题色 / 粒子背景 / 想法树 / 列表
-│   │   └── test/single.html       # 配色卡片预览页
+│   │   ├── admin/single.html      # 后台 UI：未连接时显示独立登录界面（admin-login）；连接后切到仪表盘（admin-shell）——
+│   │   │                         #   侧栏固定贴最左边（专辑/想法/Tech 笔记/主题色/粒子背景/想法树 + 断开连接），右侧对应管理面板
+│   │   ├── test/single.html       # 配色卡片预览页
+│   │   └── tech/                  # 技术文章 section（唯一以独立 markdown 文件存内容的 section，其余均单个 data/*.json）
+│   │       ├── list.html          #   /tech/         文章列表，无 "Tech" 标题，无文章时显示占位文案
+│   │       └── single.html        #   /tech/<slug>/  单篇文章：标题=该 md 的 front matter title，正文居中（.single-post）
 │   └── static/
 │       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、粒子动效、想法树、后台
 │       └── js/
 │           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
 │           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
 │           ├── thought-tree.js    # 想法树生成器：递归生长（根粗梢细/不对称/分叉），lab画廊·admin预览·thoughts页共用
-│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/想法树）
+│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/想法树/Tech笔记增删改）
 │
 └── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
-    ├── src/index.js               # Worker 主逻辑：鉴权、Apple/QQ 元数据解析、X 帖子抓取、想法增删、GitHub 读写
+    ├── src/index.js               # Worker 主逻辑：鉴权、Apple/QQ 元数据解析、X 帖子抓取、想法增删、Tech 笔记增删改（写 content/tech/*.md）、GitHub 读写
     ├── wrangler.toml              # Worker 配置（仓库/路径 vars；secret 不在此）
     └── README.md                  # Worker 部署步骤（secret 设置、wrangler deploy）
 ```
@@ -73,7 +80,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 2. **优先用 codegraph MCP**：本目录已配置 codegraph（见 `.mcp.json`）。探索代码、查符号/调用关系时优先用 `codegraph_*` 工具，**减少 token 消耗**，避免大面积 Read/Grep。
 3. **可改的网页设计优先做进后台**：凡是日后可能想调整的视觉/内容参数（配色、粒子、专辑、文案等），优先设计成「存 `data/*.json` + `/admin/` 可视化管理」，而不是写死在模板/CSS 里。
 4. **Worker 改动即重部署**：本机已登录 wrangler。改了 `worker/` 下任何文件后，执行 `cd worker && wrangler deploy` 重新部署，否则后台对应功能不生效。
-5. **数据文件归后台所有**：`data/music.json`、`data/site.json` 由后台（Worker）直接提交到远程。**不要在本地手改**；任何本地 push 前先 `git pull --rebase`，否则会覆盖后台新增的内容。
+5. **数据文件归后台所有**：`data/music.json`、`data/site.json`、`data/thoughts.json`、`content/tech/*.md` 均可由后台（Worker）直接提交到远程。**不要在本地手改**；任何本地 push 前先 `git pull --rebase`，否则会覆盖后台新增的内容。
 6. **改动后本地验证**：`hugo`（或 `rm -rf public && hugo`）确认无报错再提交；JS 用 `node --check` 验语法。
 7. **发布**：commit + push 到 `main` 即触发 CI 部署；push 属公开发布，需用户明确同意。
 
