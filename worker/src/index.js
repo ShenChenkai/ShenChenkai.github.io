@@ -139,17 +139,45 @@ export default {
         }
       }
 
+      if (url.pathname === "/api/categories") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const categories = await listCategories(cfg, env);
+          return json({ ok: true, categories }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { category } = await request.json();
+          const created = await createCategory(cfg, env, category || {});
+          return json({ ok: true, category: created }, 200, cors);
+        }
+      }
+
+      if (url.pathname.startsWith("/api/categories/")) {
+        requireAuth(request, env);
+        const cfg = config(env);
+        const slug = decodeURIComponent(url.pathname.slice("/api/categories/".length));
+
+        if (request.method === "DELETE") {
+          await deleteCategory(cfg, env, slug);
+          return json({ ok: true }, 200, cors);
+        }
+      }
+
       if (url.pathname === "/api/notes") {
         requireAuth(request, env);
         const cfg = config(env);
 
         if (request.method === "GET") {
-          const notes = await listNotes(cfg, env);
+          const category = url.searchParams.get("category") || "";
+          const notes = await listNotes(cfg, env, category);
           return json({ ok: true, notes }, 200, cors);
         }
         if (request.method === "POST") {
           const { note } = await request.json();
-          const created = await createNote(cfg, env, note || {});
+          const category = String((note && note.category) || "").trim().toLowerCase();
+          const created = await createNote(cfg, env, category, note || {});
           return json({ ok: true, note: created }, 200, cors);
         }
       }
@@ -157,19 +185,20 @@ export default {
       if (url.pathname.startsWith("/api/notes/")) {
         requireAuth(request, env);
         const cfg = config(env);
-        const slug = decodeURIComponent(url.pathname.slice("/api/notes/".length));
+        const rest = decodeURIComponent(url.pathname.slice("/api/notes/".length));
+        const [category = "", slug = ""] = rest.split("/");
 
         if (request.method === "GET") {
-          const note = await getNote(cfg, env, slug);
+          const note = await getNote(cfg, env, category, slug);
           return json({ ok: true, note }, 200, cors);
         }
         if (request.method === "PUT") {
           const { note } = await request.json();
-          const updated = await updateNote(cfg, env, slug, note || {});
+          const updated = await updateNote(cfg, env, category, slug, note || {});
           return json({ ok: true, note: updated }, 200, cors);
         }
         if (request.method === "DELETE") {
-          await deleteNote(cfg, env, slug);
+          await deleteNote(cfg, env, category, slug);
           return json({ ok: true }, 200, cors);
         }
       }
@@ -570,17 +599,77 @@ function buildNote(n) {
   return `---\ntitle: ${yamlQuote(title)}\ndate: ${date}\ndraft: ${draft}\n---\n\n${body}\n`;
 }
 
-function notePath(cfg, slug) {
-  return `${cfg.techDir}/${slug}.md`;
+function parseCategory(raw, slug) {
+  const m = String(raw || "").match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  let title = slug;
+  if (m) {
+    const t = m[1].match(/^title:\s*(.*)$/m);
+    if (t) {
+      let val = t[1].trim();
+      if (/^".*"$/.test(val)) val = val.slice(1, -1).replace(/\\(["\\])/g, "$1");
+      title = val || slug;
+    }
+  }
+  return { slug, title };
 }
 
-async function listNotes(cfg, env) {
-  const files = await ghListDir(cfg, env, cfg.techDir);
+function buildCategory(title) {
+  return `---\ntitle: ${yamlQuote(String(title || "").trim())}\n---\n`;
+}
+
+function categoryIndexPath(cfg, slug) {
+  return `${cfg.techDir}/${slug}/_index.md`;
+}
+
+async function listCategories(cfg, env) {
+  const entries = await ghListDir(cfg, env, cfg.techDir);
+  const dirs = entries.filter((e) => e.type === "dir");
+  const categories = await Promise.all(
+    dirs.map(async (d) => {
+      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${d.name}/_index.md`);
+      return parseCategory(text, d.name);
+    })
+  );
+  categories.sort((a, b) => a.title.localeCompare(b.title, "zh"));
+  return categories;
+}
+
+async function createCategory(cfg, env, category) {
+  const slug = String((category && category.slug) || "").trim().toLowerCase();
+  if (!validSlug(slug)) throw httpErr(400, "路径只能包含小写字母、数字和连字符");
+  const title = String((category && category.title) || "").trim();
+  if (!title) throw httpErr(400, "分类名称不能为空");
+  const path = categoryIndexPath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (existing.sha) throw httpErr(400, "该分类已存在");
+  const content = buildCategory(title);
+  await ghPutText(cfg, env, path, content, null, "Add tech category: " + title);
+  return { slug, title };
+}
+
+async function deleteCategory(cfg, env, slug) {
+  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+  const entries = await ghListDir(cfg, env, `${cfg.techDir}/${slug}`);
+  const hasNotes = entries.some((e) => e.type === "file" && /\.md$/.test(e.name) && e.name !== "_index.md");
+  if (hasNotes) throw httpErr(400, "该分类下还有笔记，请先删除笔记再删除分类");
+  const path = categoryIndexPath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该分类");
+  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech category: " + slug);
+}
+
+function notePath(cfg, category, slug) {
+  return `${cfg.techDir}/${category}/${slug}.md`;
+}
+
+async function listNotes(cfg, env, category) {
+  if (!validSlug(category)) throw httpErr(400, "非法分类");
+  const files = await ghListDir(cfg, env, `${cfg.techDir}/${category}`);
   const mdFiles = files.filter((f) => f.type === "file" && /\.md$/.test(f.name) && f.name !== "_index.md");
   const notes = await Promise.all(
     mdFiles.map(async (f) => {
       const slug = f.name.replace(/\.md$/, "");
-      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${f.name}`);
+      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${category}/${f.name}`);
       const n = parseNote(text, slug);
       return { slug: n.slug, title: n.title, date: n.date, draft: n.draft };
     })
@@ -589,42 +678,45 @@ async function listNotes(cfg, env) {
   return notes;
 }
 
-async function getNote(cfg, env, slug) {
-  if (!validSlug(slug)) throw httpErr(400, "非法路径");
-  const { text } = await ghGetText(cfg, env, notePath(cfg, slug));
+async function getNote(cfg, env, category, slug) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
+  const { text } = await ghGetText(cfg, env, notePath(cfg, category, slug));
   if (text == null) throw httpErr(404, "未找到该篇文章");
   return parseNote(text, slug);
 }
 
-async function createNote(cfg, env, note) {
+async function createNote(cfg, env, category, note) {
+  if (!validSlug(category)) throw httpErr(400, "请先选择或创建一个分类");
   const slug = String(note.slug || "").trim().toLowerCase();
   if (!validSlug(slug)) throw httpErr(400, "路径只能包含小写字母、数字和连字符");
   if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
-  const path = notePath(cfg, slug);
+  const catIndex = await ghGetText(cfg, env, categoryIndexPath(cfg, category));
+  if (!catIndex.sha) throw httpErr(400, "分类不存在");
+  const path = notePath(cfg, category, slug);
   const existing = await ghGetText(cfg, env, path);
   if (existing.sha) throw httpErr(400, "该路径已存在，换一个 slug");
   const content = buildNote(note);
-  await ghPutText(cfg, env, path, content, null, "Add tech note: " + note.title);
+  await ghPutText(cfg, env, path, content, null, "Add tech note: " + category + "/" + note.title);
   return parseNote(content, slug);
 }
 
-async function updateNote(cfg, env, slug, note) {
-  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+async function updateNote(cfg, env, category, slug, note) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
   if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
-  const path = notePath(cfg, slug);
+  const path = notePath(cfg, category, slug);
   const existing = await ghGetText(cfg, env, path);
   if (!existing.sha) throw httpErr(404, "未找到该篇文章");
   const content = buildNote(note);
-  await ghPutText(cfg, env, path, content, existing.sha, "Update tech note: " + note.title);
+  await ghPutText(cfg, env, path, content, existing.sha, "Update tech note: " + category + "/" + note.title);
   return parseNote(content, slug);
 }
 
-async function deleteNote(cfg, env, slug) {
-  if (!validSlug(slug)) throw httpErr(400, "非法路径");
-  const path = notePath(cfg, slug);
+async function deleteNote(cfg, env, category, slug) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
+  const path = notePath(cfg, category, slug);
   const existing = await ghGetText(cfg, env, path);
   if (!existing.sha) throw httpErr(404, "未找到该篇文章");
-  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech note: " + slug);
+  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech note: " + category + "/" + slug);
 }
 
 // ── unicode-safe base64 ─────────────────────────────────────

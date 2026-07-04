@@ -77,8 +77,7 @@
       loadConfig();
       reload();
       reloadThoughts();
-      resetNoteForm();
-      reloadNotes();
+      loadCategories();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
       $("conn-status").classList.remove("ok");
@@ -403,6 +402,70 @@
     });
   }
 
+  // ── tech categories ───────────────────────────────────────
+  let categories = [];
+
+  function currentCategory() {
+    const v = $("n-cat-select").value;
+    return v === "__new__" ? "" : v;
+  }
+
+  function toggleCatNewRow() {
+    $("n-cat-new-row").hidden = $("n-cat-select").value !== "__new__";
+  }
+
+  function renderCategorySelect(selectSlug) {
+    const sel = $("n-cat-select");
+    sel.innerHTML = "";
+    categories.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c.slug;
+      opt.textContent = c.title;
+      sel.appendChild(opt);
+    });
+    const newOpt = document.createElement("option");
+    newOpt.value = "__new__";
+    newOpt.textContent = "+ 新建分类…";
+    sel.appendChild(newOpt);
+    if (selectSlug && categories.some((c) => c.slug === selectSlug)) sel.value = selectSlug;
+    else if (categories.length) sel.value = categories[0].slug;
+    onCategoryChange();
+  }
+
+  async function loadCategories(selectSlug) {
+    try {
+      const { categories: cats } = await api("/api/categories", "GET");
+      categories = cats;
+      renderCategorySelect(selectSlug);
+    } catch (e) {
+      log("加载分类失败：" + e.message, "error");
+    }
+  }
+
+  async function createCategory() {
+    const title = ($("n-cat-new-title").value || "").trim();
+    const slug = ($("n-cat-new-slug").value || "").trim().toLowerCase();
+    if (!title) { log("分类名称不能为空。", "error"); return; }
+    if (!SLUG_RE.test(slug)) { log("分类路径只能包含小写字母、数字和连字符。", "error"); return; }
+    try {
+      log("创建分类：" + title);
+      await api("/api/categories", "POST", { category: { title, slug } });
+      log("✅ 分类已创建。");
+      $("n-cat-new-title").value = "";
+      $("n-cat-new-slug").value = "";
+      await loadCategories(slug);
+    } catch (e) {
+      log("创建分类失败：" + e.message, "error");
+    }
+  }
+
+  function onCategoryChange() {
+    toggleCatNewRow();
+    resetNoteForm();
+    if (currentCategory()) reloadNotes();
+    else $("note-list").innerHTML = "";
+  }
+
   // ── tech notes ────────────────────────────────────────────
   let editingSlug = null;
   const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -425,6 +488,7 @@
 
   function gatherNote() {
     return {
+      category: currentCategory(),
       title: ($("n-title").value || "").trim(),
       slug: ($("n-slug").value || "").trim().toLowerCase(),
       date: ($("n-date").value || "").trim(),
@@ -435,6 +499,7 @@
 
   async function saveNote() {
     const note = gatherNote();
+    if (!note.category) { log("请先选择或创建一个分类。", "error"); return; }
     if (!note.title) { log("标题必填。", "error"); return; }
     if (!note.body) { log("正文必填。", "error"); return; }
     if (!editingSlug && !SLUG_RE.test(note.slug)) {
@@ -444,7 +509,7 @@
     try {
       if (editingSlug) {
         log("更新笔记：" + note.title);
-        await api("/api/notes/" + encodeURIComponent(editingSlug), "PUT", { note });
+        await api("/api/notes/" + encodeURIComponent(note.category) + "/" + encodeURIComponent(editingSlug), "PUT", { note });
         log("✅ 已更新，约 1 分钟后上线。");
       } else {
         log("发布笔记：" + note.title);
@@ -459,8 +524,10 @@
   }
 
   async function reloadNotes() {
+    const cat = currentCategory();
+    if (!cat) { $("note-list").innerHTML = ""; return; }
     try {
-      const { notes } = await api("/api/notes", "GET");
+      const { notes } = await api("/api/notes?category=" + encodeURIComponent(cat), "GET");
       renderNotes(notes);
       log("已加载 " + notes.length + " 篇笔记。");
     } catch (e) {
@@ -469,8 +536,9 @@
   }
 
   async function editNote(slug) {
+    const cat = currentCategory();
     try {
-      const { note } = await api("/api/notes/" + encodeURIComponent(slug), "GET");
+      const { note } = await api("/api/notes/" + encodeURIComponent(cat) + "/" + encodeURIComponent(slug), "GET");
       editingSlug = slug;
       $("n-title").value = note.title || "";
       $("n-slug").value = note.slug;
@@ -488,8 +556,9 @@
 
   async function deleteNoteItem(slug, title) {
     if (!confirm("删除「" + title + "」？")) return;
+    const cat = currentCategory();
     try {
-      await api("/api/notes/" + encodeURIComponent(slug), "DELETE");
+      await api("/api/notes/" + encodeURIComponent(cat) + "/" + encodeURIComponent(slug), "DELETE");
       log("已删除：" + title);
       if (editingSlug === slug) resetNoteForm();
       reloadNotes();
@@ -544,6 +613,8 @@
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);
   $("btn-th-reload").addEventListener("click", reloadThoughts);
+  $("n-cat-select").addEventListener("change", onCategoryChange);
+  $("btn-cat-create").addEventListener("click", createCategory);
   $("btn-n-save").addEventListener("click", saveNote);
   $("btn-n-cancel").addEventListener("click", resetNoteForm);
   $("btn-n-reload").addEventListener("click", reloadNotes);

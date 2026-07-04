@@ -103,7 +103,24 @@
       <!-- Tech notes -->
       <section class="admin-box" id="panel-notes" hidden>
         <h2>Tech 笔记</h2>
-        <p class="admin-muted">直接在这里写 / 改 Markdown 技术笔记，无需手动 git 操作。提交后约 1 分钟上线。</p>
+        <p class="admin-muted">按技术主题分类管理 Markdown 笔记，无需手动 git 操作。提交后约 1 分钟上线。</p>
+
+        <label class="admin-field">
+          <span>分类</span>
+          <select id="n-cat-select"></select>
+        </label>
+        <div class="admin-row" id="n-cat-new-row" hidden>
+          <label class="admin-field" style="flex:1">
+            <span>新分类名称</span>
+            <input type="text" id="n-cat-new-title" placeholder="比如 Go / 分布式系统…" />
+          </label>
+          <label class="admin-field" style="flex:1">
+            <span>分类路径 slug（仅小写字母/数字/连字符）</span>
+            <input type="text" id="n-cat-new-slug" placeholder="go" autocomplete="off" />
+          </label>
+          <button class="admin-btn" id="btn-cat-create" type="button">创建分类</button>
+        </div>
+
         <div class="admin-row">
           <label class="admin-field" style="flex:1">
             <span>标题 *</span>
