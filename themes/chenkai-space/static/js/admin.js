@@ -38,7 +38,7 @@
   }
 
   // ── sidebar section switching ─────────────────────────────
-  const SECTIONS = ["albums", "thoughts", "notes", "theme", "particles"];
+  const SECTIONS = ["albums", "thoughts", "life", "notes", "theme", "particles"];
 
   function selectSection(name) {
     SECTIONS.forEach((s) => {
@@ -77,6 +77,7 @@
       loadConfig();
       reload();
       reloadThoughts();
+      reloadLife();
       loadCategories();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
@@ -361,6 +362,136 @@
     });
   }
 
+  // ── life (朋友圈式生活记录) ────────────────────────────────
+  let lifeImages = []; // uploaded photo URLs for the post being composed
+
+  // Downscale + re-encode to JPEG in the browser so big phone photos upload fast.
+  function compressImage(file, maxEdge = 1600, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (Math.max(w, h) > maxEdge) { const s = maxEdge / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("压缩失败"))), "image/jpeg", quality);
+      };
+      img.onerror = () => reject(new Error("图片读取失败"));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function uploadImage(blob) {
+    const base = workerUrl();
+    if (!base) throw new Error("请先填写 Worker 地址");
+    const res = await fetch(base + "/api/life-upload", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + password(), "Content-Type": "image/jpeg" },
+      body: blob,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    return data.url;
+  }
+
+  async function handleLifeFiles(ev) {
+    const files = [...(ev.target.files || [])];
+    ev.target.value = "";
+    for (const file of files) {
+      if (lifeImages.length >= 9) { log("最多 9 张。", "error"); break; }
+      try {
+        log("压缩上传：" + file.name);
+        const blob = await compressImage(file);
+        const url = await uploadImage(blob);
+        lifeImages.push(url);
+        renderLifeThumbs();
+        log("✅ 已上传（" + Math.round(blob.size / 1024) + "KB）");
+      } catch (e) {
+        log("上传失败：" + e.message, "error");
+      }
+    }
+  }
+
+  function renderLifeThumbs() {
+    const box = $("l-thumbs");
+    box.innerHTML = "";
+    lifeImages.forEach((url, i) => {
+      const div = document.createElement("div");
+      div.className = "life-thumb";
+      const img = document.createElement("img");
+      img.src = url;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "life-thumb-del";
+      del.textContent = "×";
+      del.addEventListener("click", () => { lifeImages.splice(i, 1); renderLifeThumbs(); });
+      div.appendChild(img);
+      div.appendChild(del);
+      box.appendChild(div);
+    });
+  }
+
+  async function addLife() {
+    const text = ($("l-text").value || "").trim();
+    if (!text && lifeImages.length === 0) { log("文字和照片至少要有一样。", "error"); return; }
+    try {
+      log("发布生活记录…");
+      const { posts } = await api("/api/life", "POST", { post: { text, images: lifeImages } });
+      log("✅ 已发布，约 1 分钟后上线。");
+      $("l-text").value = "";
+      lifeImages = [];
+      renderLifeThumbs();
+      renderLife(posts);
+    } catch (e) {
+      log("发布失败：" + e.message, "error");
+    }
+  }
+
+  async function reloadLife() {
+    try {
+      const { posts } = await api("/api/life", "GET");
+      renderLife(posts);
+      log("已加载 " + posts.length + " 条生活记录。");
+    } catch (e) {
+      log("加载生活记录失败：" + e.message, "error");
+    }
+  }
+
+  async function deleteLifeItem(id, label) {
+    if (!confirm("删除「" + label + "」？")) return;
+    try {
+      const { posts } = await api("/api/life", "DELETE", { id });
+      log("已删除。");
+      renderLife(posts);
+    } catch (e) {
+      log("删除失败：" + e.message, "error");
+    }
+  }
+
+  function renderLife(posts) {
+    const list = $("life-list");
+    list.innerHTML = "";
+    if (!posts || !posts.length) { list.innerHTML = '<li class="admin-muted">（空）</li>'; return; }
+    posts.forEach((p) => {
+      const li = document.createElement("li");
+      li.className = "admin-list-item";
+      const date = (p.date || "").slice(0, 10);
+      const n = (p.images || []).length;
+      const snippet = (p.text || "").replace(/\s+/g, " ").slice(0, 30) || "(无文字)";
+      const meta = document.createElement("span");
+      meta.textContent = "📷×" + n + "　" + snippet + "　" + date;
+      const del = document.createElement("button");
+      del.className = "admin-btn ghost small";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteLifeItem(p.id, snippet));
+      li.appendChild(meta);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
   // ── tech categories ───────────────────────────────────────
   let categories = [];
 
@@ -569,6 +700,9 @@
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);
   $("btn-th-reload").addEventListener("click", reloadThoughts);
+  $("btn-l-add").addEventListener("click", addLife);
+  $("btn-l-reload").addEventListener("click", reloadLife);
+  $("l-files").addEventListener("change", handleLifeFiles);
   $("n-cat-select").addEventListener("change", onCategoryChange);
   $("btn-cat-create").addEventListener("click", createCategory);
   $("btn-n-save").addEventListener("click", saveNote);

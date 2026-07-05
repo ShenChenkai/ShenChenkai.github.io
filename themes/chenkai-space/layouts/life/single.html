@@ -1,0 +1,32 @@
+{{ define "main" }}
+<div class="life-page">
+  <div class="life-head">
+    <h1 class="page-title">Life</h1>
+    <p class="subtitle">生活碎片 — 照片与日常。</p>
+  </div>
+
+  {{ $data := index hugo.Data "life" }}
+  {{ $posts := slice }}
+  {{ with $data }}{{ with .posts }}{{ $posts = sort . "date" "desc" }}{{ end }}{{ end }}
+
+  <div class="life-feed">
+    {{ range $posts }}
+    <article class="life-post">
+      {{ with .text }}<div class="life-text">{{ . | markdownify }}</div>{{ end }}
+      {{ with .images }}
+      <div class="life-gallery{{ if eq (len .) 1 }} life-gallery--single{{ end }}" data-count="{{ len . }}">
+        {{ range . }}
+        <a class="life-photo" href="{{ . }}" target="_blank" rel="noopener">
+          <img src="{{ . }}" loading="lazy" alt="" />
+        </a>
+        {{ end }}
+      </div>
+      {{ end }}
+      <time class="life-date" datetime="{{ .date }}">{{ dateFormat "2006 · 01 · 02" .date }}</time>
+    </article>
+    {{ end }}
+  </div>
+
+  <p class="life-empty"{{ if $posts }} hidden{{ end }}>还没有生活记录，去后台发一条吧。</p>
+</div>
+{{ end }}

@@ -26,6 +26,7 @@
       <div class="admin-sidebar-title">后台管理</div>
       <button class="admin-nav-item" id="nav-albums" data-section="albums" type="button">专辑</button>
       <button class="admin-nav-item" id="nav-thoughts" data-section="thoughts" type="button">想法</button>
+      <button class="admin-nav-item" id="nav-life" data-section="life" type="button">生活</button>
       <button class="admin-nav-item" id="nav-notes" data-section="notes" type="button">Tech 笔记</button>
       <button class="admin-nav-item" id="nav-theme" data-section="theme" type="button">外观</button>
       <button class="admin-nav-item" id="nav-particles" data-section="particles" type="button">粒子背景</button>
@@ -97,6 +98,28 @@
           <button class="admin-btn ghost" id="btn-th-reload" type="button">刷新</button>
         </div>
         <ol class="admin-list" id="thought-list"></ol>
+      </section>
+
+      <!-- Life -->
+      <section class="admin-box" id="panel-life" hidden>
+        <h2>生活 / Life</h2>
+        <p class="admin-muted">发一条生活记录：文字 + 照片（朋友圈式）。提交后约 1 分钟上线。</p>
+        <label class="admin-field">
+          <span>文字（支持 Markdown，可选）</span>
+          <textarea id="l-text" rows="3" placeholder="今天…"></textarea>
+        </label>
+        <label class="admin-field">
+          <span>照片（可多选，自动压缩后上传到 R2）</span>
+          <input type="file" id="l-files" accept="image/*" multiple />
+        </label>
+        <div class="life-thumbs" id="l-thumbs"></div>
+        <button class="admin-btn" id="btn-l-add" type="button">发布</button>
+
+        <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+          <h2 style="margin:0;font-size:1rem">现有记录</h2>
+          <button class="admin-btn ghost" id="btn-l-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="life-list"></ol>
       </section>
 
       <!-- Tech notes -->

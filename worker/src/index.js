@@ -21,6 +21,7 @@ const DEFAULTS = {
   DATA_PATH: "data/music.json",
   SITE_PATH: "data/site.json",
   THOUGHTS_PATH: "data/thoughts.json",
+  LIFE_PATH: "data/life.json",
   TECH_DIR: "content/tech",
 };
 
@@ -41,9 +42,33 @@ export default {
 
     const url = new URL(request.url);
     try {
+      // Public: serve Life photos straight from R2 (no auth — images are public).
+      if (url.pathname.startsWith("/img/") && request.method === "GET") {
+        const key = decodeURIComponent(url.pathname.slice("/img/".length));
+        const obj = await env.LIFE_BUCKET.get(key);
+        if (!obj) return new Response("Not found", { status: 404 });
+        const headers = new Headers();
+        obj.writeHttpMetadata(headers);
+        headers.set("etag", obj.httpEtag);
+        headers.set("cache-control", "public, max-age=31536000, immutable");
+        return new Response(obj.body, { headers });
+      }
+
       if (url.pathname === "/api/login" && request.method === "POST") {
         requireAuth(request, env);
         return json({ ok: true }, 200, cors);
+      }
+
+      if (url.pathname === "/api/life-upload" && request.method === "POST") {
+        requireAuth(request, env);
+        const ct = request.headers.get("content-type") || "image/jpeg";
+        if (!ct.startsWith("image/")) throw httpErr(400, "只接受图片");
+        const ext = ct.includes("png") ? "png" : ct.includes("webp") ? "webp" : ct.includes("gif") ? "gif" : "jpg";
+        const key = `life/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const bytes = await request.arrayBuffer();
+        if (bytes.byteLength > 8 * 1024 * 1024) throw httpErr(413, "图片过大（压缩后应 <8MB）");
+        await env.LIFE_BUCKET.put(key, bytes, { httpMetadata: { contentType: ct } });
+        return json({ ok: true, url: `${url.origin}/img/${key}` }, 200, cors);
       }
 
       if (url.pathname === "/api/resolve" && request.method === "POST") {
@@ -171,6 +196,36 @@ export default {
         }
       }
 
+      if (url.pathname === "/api/life") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const { data } = await ghGet(cfg, env, cfg.lifePath);
+          return json({ ok: true, posts: asLifePosts(data) }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { post } = await request.json();
+          const item = normalizeLifePost(post || {});
+          if (!item.text && item.images.length === 0) throw httpErr(400, "文字和照片至少要有一样");
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          posts.unshift(item);
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Add life post");
+          return json({ ok: true, posts }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          const { id } = await request.json();
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条");
+          posts.splice(idx, 1);
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Remove life post: " + id);
+          return json({ ok: true, posts }, 200, cors);
+        }
+      }
+
       if (url.pathname === "/api/notes") {
         requireAuth(request, env);
         const cfg = config(env);
@@ -226,6 +281,7 @@ function config(env) {
     path: env.DATA_PATH || DEFAULTS.DATA_PATH,
     sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
     thoughtsPath: env.THOUGHTS_PATH || DEFAULTS.THOUGHTS_PATH,
+    lifePath: env.LIFE_PATH || DEFAULTS.LIFE_PATH,
     techDir: env.TECH_DIR || DEFAULTS.TECH_DIR,
   };
 }
@@ -317,6 +373,23 @@ function normalizeThought(p) {
     body: String(p.body || "").trim(),
     source: p.source === "x" ? "x" : "admin",
     xUrl: String(p.xUrl || "").trim(),
+  };
+}
+
+// ── life (朋友圈式生活记录) ─────────────────────────────────
+function asLifePosts(data) {
+  return data && Array.isArray(data.posts) ? data.posts : [];
+}
+
+function normalizeLifePost(p) {
+  const images = Array.isArray(p.images)
+    ? p.images.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 9)
+    : [];
+  return {
+    id: String(p.id || "").trim() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+    date: String(p.date || "").trim() || new Date().toISOString(),
+    text: String(p.text || "").trim(),
+    images,
   };
 }
 
