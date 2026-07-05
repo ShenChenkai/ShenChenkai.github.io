@@ -12,7 +12,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 - **Hugo**（extended，本地 v0.162.1）+ 自建主题 `chenkai-space`。
 - **CI**：push 到 `main` → `.github/workflows/hugo.yml` 自动构建并部署到 Pages（来源须设为 GitHub Actions）。
 - **后台写数据链路**：`/admin/` 页面 → Cloudflare Worker（持密码 + GitHub Token，均为服务端 secret）→ commit `data/music.json` / `data/site.json` → 触发 CI 重建 → 约 1 分钟上线。
-- **主题/配色**：CSS 自定义属性（`--bg/--text/--accent` 等），按 `[data-palette]` + `[data-theme]` 切换；共 17 套配色（9 套常规 + 8 套 NewJeans）。
+- **主题/配色/字体**：CSS 自定义属性（`--bg/--text/--accent`、`--font-body` 等）。配色按 `[data-palette]` + `[data-theme]` 切换（17 套：9 常规 + 8 NewJeans）；正文字体按 `[data-font]` 切换（无衬线/衬线/等宽，均用系统字体栈）。
 
 ## 二、目录树（改动后请同步维护）
 
@@ -37,7 +37,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
 │   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,link}]}——后台管理，勿手改
 │   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,source,xUrl}]}——后台管理
-│   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...}}——后台管理
+│   └── site.json                 #   站点配置 {defaultPalette,defaultMode,defaultFont,particles{...}}——后台管理
 │
 ├── themes/chenkai-space/
 │   ├── layouts/
@@ -47,13 +47,13 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   │   └── single.html        # 单页默认模板
 │   │   ├── index.html             # 首页（hero + tagline）
 │   │   ├── partials/
-│   │   │   ├── head.html          # <head>：注入默认配色 + 粒子参数为 CSS 变量
+│   │   │   ├── head.html          # <head>：注入默认配色/字体（data-palette/data-theme/data-font）+ 粒子参数为 CSS 变量
 │   │   │   ├── header.html        # 顶部导航 + Music 彩色入口块（手绘音符）
 │   │   │   └── footer.html        # 页脚
 │   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
 │   │   ├── thoughts/single.html   # 想法页：想法倒序列表（长想法带标题 / 短碎念 / 从 X 抓取的帖子）
 │   │   ├── admin/single.html      # 后台 UI：未连接时显示独立登录界面（admin-login）；连接后切到仪表盘（admin-shell）——
-│   │   │                         #   侧栏固定贴最左边（专辑/想法/Tech 笔记/主题色/粒子背景 + 断开连接），右侧对应管理面板
+│   │   │                         #   侧栏固定贴最左边（专辑/想法/Tech 笔记/外观(配色+字体)/粒子背景 + 断开连接），右侧对应管理面板
 │   │   ├── test/single.html       # 配色卡片预览页
 │   │   └── tech/                  # 技术文章 section（唯一以独立 markdown 文件存内容的 section，其余均单个 data/*.json）
 │   │       ├── list.html          #   /tech/ 与 /tech/<分类>/ 共用：根用 .Sections 列分类，分类页用 .RegularPages 列笔记

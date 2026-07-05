@@ -27,7 +27,7 @@
       <button class="admin-nav-item" id="nav-albums" data-section="albums" type="button">专辑</button>
       <button class="admin-nav-item" id="nav-thoughts" data-section="thoughts" type="button">想法</button>
       <button class="admin-nav-item" id="nav-notes" data-section="notes" type="button">Tech 笔记</button>
-      <button class="admin-nav-item" id="nav-theme" data-section="theme" type="button">主题色</button>
+      <button class="admin-nav-item" id="nav-theme" data-section="theme" type="button">外观</button>
       <button class="admin-nav-item" id="nav-particles" data-section="particles" type="button">粒子背景</button>
       <button class="admin-nav-item admin-nav-item--exit" id="btn-disconnect" type="button">断开连接</button>
     </nav>
@@ -177,8 +177,8 @@
         (dict "id" "newjeans8" "name" "草绿")
       }}
       <section class="admin-box" id="panel-theme" hidden>
-        <h2>站点默认主题色</h2>
-        <p class="admin-muted">访客第一次打开网站时看到的配色。当前：<strong id="cur-theme">—</strong></p>
+        <h2>站点默认外观</h2>
+        <p class="admin-muted">访客第一次打开网站时看到的配色与字体。当前：<strong id="cur-theme">—</strong></p>
         <div class="admin-row">
           <label class="admin-field" style="flex:1">
             <span>配色</span>
@@ -202,6 +202,17 @@
           <span class="tp" style="background:var(--text)"></span>
           <span class="tp" style="background:var(--accent)"></span>
         </div>
+        <div class="admin-row" style="margin-top:0.3rem">
+          <label class="admin-field" style="flex:1">
+            <span>正文字体</span>
+            <select id="t-font">
+              <option value="sans">无衬线（默认）</option>
+              <option value="serif">衬线 · 宋体系</option>
+              <option value="mono">等宽</option>
+            </select>
+          </label>
+        </div>
+        <p class="font-preview" id="font-preview" data-font="sans">观其大略，不求甚解 · The quick brown fox jumps over the lazy dog 0123</p>
         <button class="admin-btn" id="btn-save-theme" type="button">保存默认</button>
       </section>
 

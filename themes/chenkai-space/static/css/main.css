@@ -383,10 +383,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Body font (chosen in /admin/, stored as site.defaultFont → [data-font]) ── */
+:root { --font-body: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+[data-font="serif"] { --font-body: Georgia, Cambria, "Times New Roman", "Songti SC", "Noto Serif SC", STSong, SimSun, serif; }
+[data-font="mono"]  { --font-body: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, "PingFang SC", "Microsoft YaHei", monospace; }
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: var(--font-body);
   line-height: 1.7;
   min-height: 100vh;
   display: flex;
@@ -997,6 +1002,18 @@ a:hover { opacity: 0.7; }
   margin: 1rem 0 1.2rem;
 }
 .theme-preview .tp { flex: 1; }
+
+.font-preview {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  padding: 0.9rem 1.1rem;
+  margin: 0.6rem 0 1.2rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
 
 /* Contained particle canvas, for previewing settings in admin. */
 .particle-preview {

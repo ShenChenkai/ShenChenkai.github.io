@@ -31,6 +31,9 @@ const PALETTES = [
   "newjeans5", "newjeans6", "newjeans7", "newjeans8",
 ];
 
+// Known body-font ids (must match the [data-font] rules in static/css/main.css).
+const FONTS = ["sans", "serif", "mono"];
+
 export default {
   async fetch(request, env) {
     const cors = corsHeaders(request);
@@ -95,6 +98,10 @@ export default {
           const next = normalizeConfig(data);
           next.defaultPalette = palette;
           next.defaultMode = mode;
+          if (body.defaultFont) {
+            if (!FONTS.includes(body.defaultFont)) throw httpErr(400, "未知字体: " + body.defaultFont);
+            next.defaultFont = body.defaultFont;
+          }
           if (body.particles) next.particles = normalizeParticles(body.particles);
           await ghPut(cfg, env, cfg.sitePath, next, sha, "Update site config: " + palette + "/" + mode);
           return json({ ok: true, config: next }, 200, cors);
@@ -250,6 +257,7 @@ function normalizeConfig(data) {
   return {
     defaultPalette: d.defaultPalette || "midnight",
     defaultMode: d.defaultMode === "light" ? "light" : "dark",
+    defaultFont: FONTS.includes(d.defaultFont) ? d.defaultFont : "sans",
     particles: normalizeParticles(d.particles),
   };
 }

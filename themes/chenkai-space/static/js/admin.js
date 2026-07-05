@@ -125,8 +125,10 @@
       const { config } = await api("/api/config", "GET");
       $("t-palette").value = config.defaultPalette;
       $("t-mode").value = config.defaultMode;
+      $("t-font").value = config.defaultFont || "sans";
       updateThemePreview();
-      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+      updateFontPreview();
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode + " · " + $("t-font").value;
 
       const p = config.particles || {};
       const defs = { gap: 16, dotOpacity: 0.28, jitter: 1, wavePeriod: 8, waveAngle: 72, waveOpacity: 0.6 };
@@ -196,13 +198,18 @@
     box.setAttribute("data-theme", $("t-mode").value);
   }
 
+  function updateFontPreview() {
+    $("font-preview").setAttribute("data-font", $("t-font").value);
+  }
+
   async function saveTheme() {
     const defaultPalette = $("t-palette").value;
     const defaultMode = $("t-mode").value;
+    const defaultFont = $("t-font").value;
     try {
-      log("保存默认主题：" + defaultPalette + " / " + defaultMode);
-      const { config } = await api("/api/config", "POST", { defaultPalette, defaultMode });
-      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+      log("保存默认外观：" + defaultPalette + " / " + defaultMode + " / " + defaultFont);
+      const { config } = await api("/api/config", "POST", { defaultPalette, defaultMode, defaultFont });
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode + " · " + config.defaultFont;
       log("✅ 已保存，约 1 分钟后上线。");
     } catch (e) {
       log("保存失败：" + e.message, "error");
@@ -555,6 +562,7 @@
   $("btn-save-theme").addEventListener("click", saveTheme);
   $("t-palette").addEventListener("change", updateThemePreview);
   $("t-mode").addEventListener("change", updateThemePreview);
+  $("t-font").addEventListener("change", updateFontPreview);
   $("btn-save-particles").addEventListener("click", saveParticles);
   PKEYS.forEach((k) => $("p-" + k).addEventListener("input", applyParticlePreview));
   $("th-type").addEventListener("change", toggleThoughtTitle);
