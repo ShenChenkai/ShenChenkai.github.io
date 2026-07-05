@@ -1,6 +1,7 @@
 {
   "defaultPalette": "newjeans1",
   "defaultMode": "light",
+  "defaultFont": "serif",
   "particles": {
     "gap": 25,
     "dotOpacity": 0.34,
