@@ -435,12 +435,14 @@
 
   async function addLife() {
     const text = ($("l-text").value || "").trim();
+    const date = ($("l-date").value || "").trim();
     if (!text && lifeImages.length === 0) { log("文字和照片至少要有一样。", "error"); return; }
     try {
       log("发布生活记录…");
-      const { posts } = await api("/api/life", "POST", { post: { text, images: lifeImages } });
+      const { posts } = await api("/api/life", "POST", { post: { text, date, images: lifeImages } });
       log("✅ 已发布，约 1 分钟后上线。");
       $("l-text").value = "";
+      $("l-date").value = todayStr();
       lifeImages = [];
       renderLifeThumbs();
       renderLife(posts);
@@ -703,6 +705,7 @@
   $("btn-l-add").addEventListener("click", addLife);
   $("btn-l-reload").addEventListener("click", reloadLife);
   $("l-files").addEventListener("change", handleLifeFiles);
+  $("l-date").value = todayStr();
   $("n-cat-select").addEventListener("change", onCategoryChange);
   $("btn-cat-create").addEventListener("click", createCategory);
   $("btn-n-save").addEventListener("click", saveNote);
