@@ -54,7 +54,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   │   └── footer.html        # 页脚
 │   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
 │   │   ├── thoughts/single.html   # 想法页：想法倒序列表（长想法带标题 / 短碎念 / 从 X 抓取的帖子）
-│   │   ├── life/single.html       # 生活页：朋友圈式卡片流（文字 + 照片网格：单图大图/多图九宫格 + 时间）
+│   │   ├── life/single.html       # 生活页：朋友圈式卡片流（文字 + 照片网格：单图大图/多图九宫格 + 时间）；点图弹 lightbox 放大，引 life.js
 │   │   ├── admin/single.html      # 后台 UI：未连接时显示独立登录界面（admin-login）；连接后切到仪表盘（admin-shell）——
 │   │   │                         #   侧栏固定贴最左边（专辑/想法/生活/Tech 笔记/外观(配色+字体)/粒子背景 + 断开连接），右侧对应管理面板
 │   │   ├── test/single.html       # 配色卡片预览页
@@ -63,10 +63,11 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │       │                      #     （非根页面才显示分类标题；.Kind=="page" 才显示日期），无内容时显示占位文案
 │   │       └── single.html        #   /tech/<分类>/<slug>/  单篇文章：标题=该 md 的 front matter title，正文居中（.single-post）
 │   └── static/
-│       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、Life 照片流、粒子动效、Tech 文章排版、后台
+│       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、Life 照片流（含图片 lightbox）、粒子动效、Tech 文章排版、后台
 │       └── js/
 │           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
 │           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
+│           ├── life.js            # Life 图片 lightbox：点缩略图→半透明遮罩层放大居中，点图外 / Esc 关闭
 │           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/Tech分类+笔记/Life发布+编辑=前端压缩+上传R2）
 │
 └── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）

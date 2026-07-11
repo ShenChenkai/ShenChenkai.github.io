@@ -756,6 +756,7 @@ a:hover { opacity: 0.7; }
   border-radius: 8px;
   background: var(--bg2);
   border: 1px solid var(--border);
+  cursor: zoom-in;
 }
 .life-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
 .life-photo:hover img { transform: scale(1.04); }
@@ -765,6 +766,35 @@ a:hover { opacity: 0.7; }
 
 .life-date { display: block; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; }
 .life-empty { color: var(--muted); font-style: italic; }
+
+/* Photo lightbox: click a Life photo to zoom it to a centered overlay. */
+.life-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 5vw;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.life-lightbox[hidden] { display: none; }
+.life-lightbox.is-open { opacity: 1; }
+.life-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+  transform: scale(0.9);
+  transition: transform 0.22s ease;
+  cursor: default;
+}
+.life-lightbox.is-open img { transform: scale(1); }
+body.life-lightbox-lock { overflow: hidden; }
 
 /* admin: uploaded-photo thumbnails in the Life panel */
 .life-thumbs { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; }

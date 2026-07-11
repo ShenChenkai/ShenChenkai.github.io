@@ -16,7 +16,7 @@
       {{ with .images }}
       <div class="life-gallery{{ if eq (len .) 1 }} life-gallery--single{{ end }}" data-count="{{ len . }}">
         {{ range . }}
-        <a class="life-photo" href="{{ . }}" target="_blank" rel="noopener">
+        <a class="life-photo" href="{{ . }}">
           <img src="{{ . }}" loading="lazy" alt="" />
         </a>
         {{ end }}
@@ -29,4 +29,5 @@
 
   <p class="life-empty"{{ if $posts }} hidden{{ end }}>还没有生活记录，去后台发一条吧。</p>
 </div>
+<script src="/js/life.js" defer></script>
 {{ end }}
