@@ -214,6 +214,20 @@ export default {
           await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Add life post");
           return json({ ok: true, posts }, 200, cors);
         }
+        if (request.method === "PUT") {
+          const { post } = await request.json();
+          const id = String((post && post.id) || "").trim();
+          if (!id) throw httpErr(400, "缺少 id");
+          const item = normalizeLifePost(post || {});
+          if (!item.text && item.images.length === 0) throw httpErr(400, "文字和照片至少要有一样");
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条");
+          posts[idx] = item;
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Edit life post: " + id);
+          return json({ ok: true, posts }, 200, cors);
+        }
         if (request.method === "DELETE") {
           const { id } = await request.json();
           const { data, sha } = await ghGet(cfg, env, cfg.lifePath);

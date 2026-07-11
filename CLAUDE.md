@@ -67,11 +67,11 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │       └── js/
 │           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
 │           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
-│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/Tech分类+笔记/Life发照片=前端压缩+上传R2）
+│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/Tech分类+笔记/Life发布+编辑=前端压缩+上传R2）
 │
 └── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
     ├── src/index.js               # Worker 主逻辑：鉴权、Apple/QQ 元数据解析、X 帖子抓取、想法增删、Tech 分类+笔记增删改
-    │                              #   （写 content/tech/<分类>/_index.md 与 <分类>/<slug>.md）、Life 增删（写 data/life.json）
+    │                              #   （写 content/tech/<分类>/_index.md 与 <分类>/<slug>.md）、Life 增删改（写 data/life.json）
     │                              #   、Life 照片上传存 R2（POST /api/life-upload）+ 公开读图（GET /img/<key>）、GitHub 读写
     ├── wrangler.toml              # Worker 配置（仓库/路径 vars + R2 binding LIFE_BUCKET=chenkai-life；secret 不在此）
     └── README.md                  # Worker 部署步骤（secret 设置、wrangler deploy）

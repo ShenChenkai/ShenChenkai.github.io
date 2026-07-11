@@ -364,6 +364,7 @@
 
   // ── life (朋友圈式生活记录) ────────────────────────────────
   let lifeImages = []; // uploaded photo URLs for the post being composed
+  let editingLifeId = null; // non-null when editing an existing post
 
   // Downscale + re-encode to JPEG in the browser so big phone photos upload fast.
   function compressImage(file, maxEdge = 1600, quality = 0.85) {
@@ -433,22 +434,47 @@
     });
   }
 
-  async function addLife() {
+  async function saveLife() {
     const text = ($("l-text").value || "").trim();
     const date = ($("l-date").value || "").trim();
     if (!text && lifeImages.length === 0) { log("文字和照片至少要有一样。", "error"); return; }
     try {
-      log("发布生活记录…");
-      const { posts } = await api("/api/life", "POST", { post: { text, date, images: lifeImages } });
-      log("✅ 已发布，约 1 分钟后上线。");
-      $("l-text").value = "";
-      $("l-date").value = todayStr();
-      lifeImages = [];
-      renderLifeThumbs();
+      let posts;
+      if (editingLifeId) {
+        log("更新生活记录…");
+        ({ posts } = await api("/api/life", "PUT", { post: { id: editingLifeId, text, date, images: lifeImages } }));
+        log("✅ 已更新，约 1 分钟后上线。");
+      } else {
+        log("发布生活记录…");
+        ({ posts } = await api("/api/life", "POST", { post: { text, date, images: lifeImages } }));
+        log("✅ 已发布，约 1 分钟后上线。");
+      }
+      resetLifeForm();
       renderLife(posts);
     } catch (e) {
-      log("发布失败：" + e.message, "error");
+      log((editingLifeId ? "更新失败：" : "发布失败：") + e.message, "error");
     }
+  }
+
+  function resetLifeForm() {
+    editingLifeId = null;
+    $("l-text").value = "";
+    $("l-date").value = todayStr();
+    lifeImages = [];
+    renderLifeThumbs();
+    $("btn-l-add").textContent = "发布";
+    $("btn-l-cancel").hidden = true;
+  }
+
+  function editLifeItem(p) {
+    editingLifeId = p.id;
+    $("l-text").value = p.text || "";
+    $("l-date").value = (p.date || "").slice(0, 10) || todayStr();
+    lifeImages = [...(p.images || [])];
+    renderLifeThumbs();
+    $("btn-l-add").textContent = "保存修改";
+    $("btn-l-cancel").hidden = false;
+    $("panel-life").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function reloadLife() {
@@ -466,6 +492,7 @@
     try {
       const { posts } = await api("/api/life", "DELETE", { id });
       log("已删除。");
+      if (editingLifeId === id) resetLifeForm();
       renderLife(posts);
     } catch (e) {
       log("删除失败：" + e.message, "error");
@@ -484,12 +511,20 @@
       const snippet = (p.text || "").replace(/\s+/g, " ").slice(0, 30) || "(无文字)";
       const meta = document.createElement("span");
       meta.textContent = "📷×" + n + "　" + snippet + "　" + date;
+      const actions = document.createElement("span");
+      actions.className = "admin-list-actions";
+      const edit = document.createElement("button");
+      edit.className = "admin-btn ghost small";
+      edit.textContent = "编辑";
+      edit.addEventListener("click", () => editLifeItem(p));
       const del = document.createElement("button");
       del.className = "admin-btn ghost small";
       del.textContent = "删除";
       del.addEventListener("click", () => deleteLifeItem(p.id, snippet));
+      actions.appendChild(edit);
+      actions.appendChild(del);
       li.appendChild(meta);
-      li.appendChild(del);
+      li.appendChild(actions);
       list.appendChild(li);
     });
   }
@@ -702,10 +737,11 @@
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);
   $("btn-th-reload").addEventListener("click", reloadThoughts);
-  $("btn-l-add").addEventListener("click", addLife);
+  $("btn-l-add").addEventListener("click", saveLife);
+  $("btn-l-cancel").addEventListener("click", resetLifeForm);
   $("btn-l-reload").addEventListener("click", reloadLife);
   $("l-files").addEventListener("change", handleLifeFiles);
-  $("l-date").value = todayStr();
+  resetLifeForm();
   $("n-cat-select").addEventListener("change", onCategoryChange);
   $("btn-cat-create").addEventListener("click", createCategory);
   $("btn-n-save").addEventListener("click", saveNote);
