@@ -1,15 +1,6 @@
 {
   "posts": [
     {
-      "id": "demo-long",
-      "type": "long",
-      "date": "2026-06-14T09:30:00Z",
-      "title": "为什么我把 Essays 改成了 Thoughts",
-      "body": "「Essays」总让我觉得每条都得是篇正经文章，压力很大。\n\n改叫 **Thoughts** 之后，长想法、短碎念都能往里丢：\n\n- 想清楚的，写成带标题的长想法\n- 一闪而过的，几句话的短想法\n- 在 X 上发过的，贴个链接抓回来\n\n这样我发观点会更随意，也更频繁。",
-      "source": "admin",
-      "xUrl": ""
-    },
-    {
       "id": "demo-x",
       "type": "short",
       "date": "2026-06-12T14:00:00Z",
