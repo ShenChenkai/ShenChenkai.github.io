@@ -1,7 +1,12 @@
 {
+  "_note": "照片堆叠数据。src 填静态图片路径（放 static/images/ 后写 /images/xxx.jpg），alt 描述，caption 显示在卡片白边下沿。当前为网络占位图（picsum.photos 随机图），换自己的照片时替换 src 即可。",
   "photos": [
-    { "caption": "占位 · 晨光" },
-    { "caption": "占位 · 街角" },
-    { "caption": "占位 · 远山" }
+    { "src": "https://picsum.photos/seed/chenkai-a/620/780", "alt": "海边下午", "caption": "海边下午" },
+    { "src": "https://picsum.photos/seed/chenkai-b/620/780", "alt": "城市漫游", "caption": "城市漫游" },
+    { "src": "https://picsum.photos/seed/chenkai-c/620/780", "alt": "窗台的光", "caption": "窗台的光" },
+    { "src": "https://picsum.photos/seed/chenkai-d/620/780", "alt": "夜航", "caption": "夜航" },
+    { "src": "https://picsum.photos/seed/chenkai-e/620/780", "alt": "无名山丘", "caption": "无名山丘" },
+    { "src": "https://picsum.photos/seed/chenkai-f/620/780", "alt": "旧书页", "caption": "旧书页" },
+    { "src": "https://picsum.photos/seed/chenkai-g/620/780", "alt": "巷口", "caption": "巷口" }
   ]
 }

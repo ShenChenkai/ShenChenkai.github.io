@@ -2,35 +2,32 @@
 <div class="home">
 
   <section class="home-hero">
-    <div class="wrap">
-      <p class="hero-kicker">✳ {{ .Site.Params.author }} 的个人空间</p>
-      <h1 class="display">
-        <span class="display-l1">收集光影与旋律，</span>
-        <span class="display-l2">也收集一闪而过的念头。</span>
-      </h1>
-      <p class="hero-sub">{{ .Site.Params.tagline }}。这里存放我的摄影、正在循环的专辑，和一些来不及展开的想法。</p>
-      <div class="hero-cta">
-        <a class="btn-pill" href="/thoughts/">进入想法流</a>
-        <a class="btn-pill btn-pill--ghost" href="/music/">去音乐墙</a>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="hero-kicker">✳ {{ .Site.Params.author }} 的个人空间</p>
+        <h1 class="display">
+          <span class="display-l1">收集光影与旋律，</span>
+          <span class="display-l2">也接住每个闪念。</span>
+        </h1>
+        <p class="hero-sub">{{ .Site.Params.tagline }}。这里存放我的摄影、正在循环的专辑，和一些来不及展开的想法。</p>
+        <div class="hero-cta">
+          <a class="btn-pill" href="/thoughts/">进入想法流</a>
+          <a class="btn-pill btn-pill--ghost" href="/music/">去音乐墙</a>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section class="chapter">
-    <div class="wrap">
-      <header class="chapter-head">
-        <span class="kicker">01 · Photography</span>
-        <h2 class="chapter-title">用取景框收藏走过的光线。</h2>
-      </header>
       {{ with .Site.Data.photos }}
-      <div class="photo-grid">
-        {{ range $i, $p := first 3 .photos }}
-          <figure class="ph-tile {{ index (slice "ph-a" "ph-b" "ph-c") $i }}">
-            {{ with $p.src }}<img src="{{ . }}" alt="{{ $p.alt }}" loading="lazy">{{ end }}
-            {{ with $p.caption }}<figcaption class="ph-cap">{{ . }}</figcaption>{{ end }}
-          </figure>
-        {{ end }}
+      {{ if .photos }}
+      <div class="hero-pile">
+        <div class="photo-pile" id="photo-pile" aria-label="随手一叠照片">
+          {{ range $i, $p := .photos }}
+            <figure class="pile-card">
+              {{ with $p.src }}<img src="{{ . }}" alt="{{ $p.alt }}" draggable="false">{{ end }}
+              {{ with $p.caption }}<figcaption class="pile-cap">{{ . }}</figcaption>{{ end }}
+            </figure>
+          {{ end }}
+        </div>
       </div>
+      {{ end }}
       {{ end }}
     </div>
   </section>
@@ -38,7 +35,7 @@
   <section class="chapter">
     <div class="wrap">
       <header class="chapter-head">
-        <span class="kicker">02 · Music</span>
+        <span class="kicker">01 · Music</span>
         <h2 class="chapter-title">唱片架上，最近在循环。</h2>
       </header>
       {{ with .Site.Data.music.albums }}
@@ -58,7 +55,7 @@
   <section class="chapter">
     <div class="wrap">
       <header class="chapter-head">
-        <span class="kicker">03 · Thoughts</span>
+        <span class="kicker">02 · Thoughts</span>
         <h2 class="chapter-title">来不及展开，先记在这里。</h2>
       </header>
       {{ with .Site.Data.thoughts.posts }}
@@ -82,5 +79,6 @@
     </div>
   </section>
 
+  <script src="/js/photo-pile.js" defer></script>
 </div>
 {{ end }}
