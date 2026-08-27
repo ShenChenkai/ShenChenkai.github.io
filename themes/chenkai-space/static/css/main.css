@@ -422,6 +422,9 @@ a {
 }
 a:hover { opacity: 0.7; }
 
+/* 桌面无边界的护栏：照片可探出视口，但不产生横向滚动条 */
+html, body { overflow-x: hidden; }
+
 /* ── Header ───────────────────────────────────────────────── */
 
 .site-header {
@@ -555,7 +558,7 @@ a:hover { opacity: 0.7; }
 }
 
 /* hero */
-.home-hero { min-height: calc(78vh - 70px); display: flex; align-items: center; overflow: clip; }
+.home-hero { min-height: calc(78vh - 70px); display: flex; align-items: center; }
 .home-hero .wrap { width: 100%; }
 
 .hero-grid {
