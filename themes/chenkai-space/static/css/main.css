@@ -634,9 +634,7 @@ a:hover { opacity: 0.7; }
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgba(26, 24, 20, 0.45);
-  opacity: 0;
-  transition: opacity 0.4s ease;
+  background: transparent;   /* 不压暗背景，只用于「点空白处放下」 */
   cursor: zoom-out;
 }
 .pile-scrim.on { opacity: 1; }

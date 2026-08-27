@@ -40,6 +40,9 @@
   let rectW = 0, rectH = 0;
   let heldIdx = -1;                            // 正被拿起的那张；-1 无
   let returnIdx = -1;                          // 放回动画进行中的那张；-1 无
+  let heldEl = null, heldReady = false;
+  let hx = innerWidth / 2, hy = innerHeight * 0.42;   // 全局指针位置：拿起的照片跟随它漂移
+  const hCur = { x: 0, y: 0, rx: 0, ry: 0 };          // 漂移/倾斜的当前值
 
   const measure = () => {
     const r = stage.getBoundingClientRect();
@@ -63,6 +66,7 @@
     px = e.clientX - r.left - r.width / 2;
     py = e.clientY - r.top - r.height / 2;
   });
+  addEventListener("pointermove", (e) => { hx = e.clientX; hy = e.clientY; });
 
   /* ── 拿起 / 放下 ──────────────────────────────────────────── */
 
@@ -90,6 +94,7 @@
     };
     el._memo = memo;
     el.classList.add("pile-card--held");
+    heldEl = el;
     Object.assign(el.style, {
       position: "fixed",
       left: memo.left + "px",
@@ -115,9 +120,15 @@
         width: targetW + "px",
         height: targetH + "px",
         transform: `rotate(${memo.rot.toFixed(2)}deg) scale(1)`,
-        boxShadow: "0 40px 90px -30px rgba(26,24,20,.55)",
+        boxShadow: "0 26px 50px -18px rgba(26,24,20,.45), 0 80px 150px -40px rgba(26,24,20,.5)",
       });
     });
+    // 入场动画结束后，transform 移交给逐帧视差
+    setTimeout(() => {
+      if (heldIdx !== i) return;
+      el.style.transition = "box-shadow .4s ease";
+      heldReady = true;
+    }, 660);
     el.addEventListener("click", putDown);
   };
 
@@ -127,18 +138,21 @@
     const el = cards[i];
     const memo = el._memo;
     heldIdx = -1;
+    heldReady = false;
     returnIdx = i;
+    hCur.x = hCur.y = hCur.rx = hCur.ry = 0;
 
     el.removeEventListener("click", putDown);
     if (scrim) {
       const s = scrim;                      // 局部捕获，避免置 null 后闭包失效
       s.classList.remove("on");
-      setTimeout(() => s.remove(), 400);
+      setTimeout(() => s.remove(), 250);
       scrim = null;
     }
 
     // 回到桌面上的原位，随后归还给普通定位与主循环
     Object.assign(el.style, {
+      transition: `left ${ease} .5s, top ${ease} .5s, width ${ease} .5s, height ${ease} .5s, transform ${ease} .5s, box-shadow .35s ease`,
       left: memo.left + "px",
       top: memo.top + "px",
       width: memo.width + "px",
@@ -150,7 +164,8 @@
       el.classList.remove("pile-card--held");
       el.style.cssText = "";
       returnIdx = -1;
-    }, 580);
+      heldEl = null;
+    }, 600);
   };
 
   addEventListener("keydown", (e) => { if (e.key === "Escape") putDown(); });
@@ -160,6 +175,22 @@
   });
 
   /* ── 主循环 ──────────────────────────────────────────────── */
+
+  // 拿起后的视差：屏幕中心为锚，指针位置换算成小位移向量＋细微倾角
+  const applyHeld = (dt) => {
+    if (!heldReady || reduceMotion || isTouch || !heldEl) return;
+    const rot = heldEl._memo ? heldEl._memo.rot : 0;
+    const nx = hx / innerWidth - 0.5;          // -0.5 ~ 0.5
+    const ny = hy / innerHeight - 0.5;
+    const k = 1 - Math.exp(-dt * 6);
+    hCur.x += (nx * 46 - hCur.x) * k;
+    hCur.y += (ny * 32 - hCur.y) * k;
+    hCur.rx += (-ny * 6 - hCur.rx) * k;
+    hCur.ry += (nx * 9 - hCur.ry) * k;
+    heldEl.style.transform =
+      `perspective(1000px) translate(${hCur.x.toFixed(2)}px, ${hCur.y.toFixed(2)}px) ` +
+      `rotate(${rot.toFixed(2)}deg) rotateX(${hCur.rx.toFixed(2)}deg) rotateY(${hCur.ry.toFixed(2)}deg)`;
+  };
 
   let dt = 0.016;
   let last = performance.now();
@@ -216,6 +247,7 @@
 
     const t = now / 1000;
     for (let i = 0; i < N; i++) apply(i, t);
+    if (heldIdx !== -1 && heldEl) applyHeld(dt);
   };
 
   const start = () => { last = performance.now(); rafId = requestAnimationFrame(tick); };
