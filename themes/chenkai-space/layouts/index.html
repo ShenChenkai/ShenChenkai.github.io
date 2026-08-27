@@ -1,6 +1,86 @@
 {{ define "main" }}
-<section class="home-hero">
-  <h1 class="home-title">{{ .Site.Title }}</h1>
-  <p class="home-tagline">{{ .Site.Params.tagline }}</p>
-</section>
+<div class="home">
+
+  <section class="home-hero">
+    <div class="wrap">
+      <p class="hero-kicker">✳ {{ .Site.Params.author }} 的个人空间</p>
+      <h1 class="display">
+        <span class="display-l1">收集光影与旋律，</span>
+        <span class="display-l2">也收集一闪而过的念头。</span>
+      </h1>
+      <p class="hero-sub">{{ .Site.Params.tagline }}。这里存放我的摄影、正在循环的专辑，和一些来不及展开的想法。</p>
+      <div class="hero-cta">
+        <a class="btn-pill" href="/thoughts/">进入想法流</a>
+        <a class="btn-pill btn-pill--ghost" href="/music/">去音乐墙</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="wrap">
+      <header class="chapter-head">
+        <span class="kicker">01 · Photography</span>
+        <h2 class="chapter-title">用取景框收藏走过的光线。</h2>
+      </header>
+      {{ with .Site.Data.photos }}
+      <div class="photo-grid">
+        {{ range $i, $p := first 3 .photos }}
+          <figure class="ph-tile {{ index (slice "ph-a" "ph-b" "ph-c") $i }}">
+            {{ with $p.src }}<img src="{{ . }}" alt="{{ $p.alt }}" loading="lazy">{{ end }}
+            {{ with $p.caption }}<figcaption class="ph-cap">{{ . }}</figcaption>{{ end }}
+          </figure>
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="wrap">
+      <header class="chapter-head">
+        <span class="kicker">02 · Music</span>
+        <h2 class="chapter-title">唱片架上，最近在循环。</h2>
+      </header>
+      {{ with .Site.Data.music.albums }}
+      <div class="shelf">
+        {{ range first 6 . }}
+          <a class="shelf-album" href="{{ .link }}" target="_blank" rel="noopener">
+            <span class="album-cover"><img src="{{ .cover }}" alt="{{ .title }}" loading="lazy"></span>
+            <span class="album-meta"><strong>{{ .title }}</strong><em>{{ .artist }}</em></span>
+          </a>
+        {{ end }}
+      </div>
+      {{ end }}
+      <div class="shelf-more"><a class="btn-pill btn-pill--ghost" href="/music/">去整面音乐墙 →</a></div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="wrap">
+      <header class="chapter-head">
+        <span class="kicker">03 · Thoughts</span>
+        <h2 class="chapter-title">来不及展开，先记在这里。</h2>
+      </header>
+      {{ with .Site.Data.thoughts.posts }}
+      <div class="teaser-list">
+        {{ range first 3 . }}
+          {{ $d := time .date }}
+          <a class="teaser-item" href="/thoughts/">
+            <span class="teaser-meta">{{ $d.Format "2006 · 01 · 02" }}</span>
+            <span class="teaser-text">{{ with .title }}{{ . }}{{ else }}{{ .body | plainify | truncate 48 }}{{ end }}</span>
+          </a>
+        {{ end }}
+      </div>
+      {{ end }}
+      <div class="shelf-more"><a class="btn-pill btn-pill--ghost" href="/thoughts/">读全部想法 →</a></div>
+    </div>
+  </section>
+
+  <section class="statement">
+    <div class="wrap">
+      <p><span class="st-mark">✳</span> 记录本身，就是意义。<span class="st-mark">✳</span></p>
+    </div>
+  </section>
+
+</div>
 {{ end }}

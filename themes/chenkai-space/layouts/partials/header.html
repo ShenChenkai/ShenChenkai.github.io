@@ -2,7 +2,16 @@
   <a class="site-title" href="/">{{ .Site.Title }}</a>
   <nav class="site-nav">
     {{ range .Site.Menus.main }}
-      {{ if not (eq .Name "Music") }}
+      {{ if eq .Name "Music" }}
+        <a class="nav-music-link" href="{{ .URL }}">
+          <svg class="music-icon" viewBox="0 0 22 26" width="15" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.5 21.5 C2 18.5 4.5 16 8 16.5 C11.5 17 13 19.5 12.5 22.5 C12 25 9 26.5 6 25.5 C3 24.5 2.5 23 2.5 21.5Z" fill="currentColor"/>
+            <path d="M12.5 20.5 C13 15.5 13.5 10 16 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M16 4.5 C19.5 7 20 12.5 15.5 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          </svg>
+          Music
+        </a>
+      {{ else }}
         <a href="{{ .URL }}">{{ .Name }}</a>
       {{ end }}
     {{ end }}
@@ -11,15 +20,4 @@
     <span class="icon-sun">☀</span>
     <span class="icon-moon">☽</span>
   </button>
-  {{ range .Site.Menus.main }}
-    {{ if eq .Name "Music" }}
-      <a href="{{ .URL }}" class="nav-music" aria-label="Music">
-        <svg class="music-icon" viewBox="0 0 22 26" width="22" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2.5 21.5 C2 18.5 4.5 16 8 16.5 C11.5 17 13 19.5 12.5 22.5 C12 25 9 26.5 6 25.5 C3 24.5 2.5 23 2.5 21.5Z" fill="currentColor"/>
-          <path d="M12.5 20.5 C13 15.5 13.5 10 16 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-          <path d="M16 4.5 C19.5 7 20 12.5 15.5 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-        </svg>
-      </a>
-    {{ end }}
-  {{ end }}
 </header>

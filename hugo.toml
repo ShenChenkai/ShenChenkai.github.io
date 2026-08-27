@@ -10,18 +10,10 @@ enableEmoji = true
 
 [menu]
   [[menu.main]]
-    name = "Tech"
-    url = "/tech/"
-    weight = 1
-  [[menu.main]]
     name = "Thoughts"
     url = "/thoughts/"
-    weight = 2
-  [[menu.main]]
-    name = "Photos"
-    url = "/photos/"
-    weight = 3
+    weight = 1
   [[menu.main]]
     name = "Music"
     url = "/music/"
-    weight = 4
+    weight = 2
