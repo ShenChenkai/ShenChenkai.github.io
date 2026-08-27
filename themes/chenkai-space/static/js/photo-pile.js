@@ -1,9 +1,10 @@
 /* photo-pile.js — 首页 hero 的照片堆叠交互
  *
- * 状态：一叠随手乱放的照片（每张有固定的伪随机散落姿态）。
- * 鼠标进入区域：照片缓动展开成扇形，横向位置跟随指针偏移；
- * 靠近某张：轻微躲闪；点击：弹到最上层并轻跳一下；
- * 移出区域：收回成叠。触屏设备改为点按切换展开。
+ * 照片像随手摊在桌面上。指针是一支「手」：
+ * 移动到哪，附近的照片就被轻轻推开让出空间，离开后归位；
+ * 点击某张 = 把它拿起来举到屏幕中央细看（页面其余部分压暗），
+ * 再点一次 / 点空白处 / 按 Esc 放回原位。
+ * 触屏设备同样适用：拖动手指推开照片，点按拿起、再点放下。
  */
 
 (() => {
@@ -14,11 +15,10 @@
   if (!N) return;
 
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const canHover = matchMedia("(hover: hover)").matches;
 
   // 每张卡的固有特征（确定性伪随机，刷新后姿态不变）
-  // gx/gy 是「摊在桌上」的归一化散布位：按网格分层再抖动，保证铺开不扎堆
-  const cols = Math.max(2, Math.round(Math.sqrt(N * 1.4)));
+  // gx/gy 是「摊在桌上」的归一化散布位：按网格分层再抖动，保证密集又不扎堆
+  const cols = Math.max(2, Math.round(Math.sqrt(N * 1.5)));
   const rows = Math.ceil(N / cols);
   const trait = cards.map((_, i) => {
     const r = (n) => {
@@ -26,25 +26,20 @@
       return x - Math.floor(x);
     };
     return {
-      rotS: (r(1) - 0.5) * 26,       // 散布时的随机角度 ±13°
-      gx: ((i % cols) + 0.25 + r(2) * 0.5) / cols - 0.5,
-      gy: (Math.floor(i / cols) + 0.28 + r(3) * 0.44) / rows - 0.5,
-      arcJit: (r(4) - 0.5) * 18,     // 扇形弧线的高低错落
-      speed: 6.5 + r(5) * 4.5,       // 缓动速度差 → 拖尾感
-      sp: 0.7 + r(6) * 0.9,          // 呼吸漂浮频率
-      ph: r(7) * Math.PI * 2,
+      rotS: (r(1) - 0.5) * 28,       // 桌面姿态随机角度 ±14°
+      gx: ((i % cols) + 0.16 + r(2) * 0.68) / cols - 0.5,
+      gy: (Math.floor(i / cols) + 0.2 + r(3) * 0.6) / rows - 0.5,
+      speed: 6 + r(4) * 4.5,         // 缓动速度差 → 有机拖尾感
+      sp: 0.7 + r(5) * 0.9,          // 呼吸漂浮频率
+      ph: r(6) * Math.PI * 2,
     };
   });
 
-  // 当前值 / 目标值
   const cur = cards.map(() => ({ x: 0, y: 0, r: 0, s: 1 }));
-  let order = cards.map((_, i) => i);          // 从底到顶
-  let openCur = 0, openTarget = 0;
   let px = -9999, py = -9999;                  // 指针相对 stage 中心的坐标
-  let pop = new Float32Array(N);               // 点击弹跳冲量
   let rectW = 0, rectH = 0;
-
-  order.forEach((ci, zi) => { cards[ci].style.zIndex = zi + 1; });
+  let heldIdx = -1;                            // 正被拿起的那张；-1 无
+  let returnIdx = -1;                          // 放回动画进行中的那张；-1 无
 
   const measure = () => {
     const r = stage.getBoundingClientRect();
@@ -54,72 +49,154 @@
   measure();
   addEventListener("resize", measure);
 
-  if (canHover) {
-    stage.addEventListener("pointerenter", () => { openTarget = 1; });
-    stage.addEventListener("pointerleave", () => { openTarget = 0; px = py = -9999; });
-    stage.addEventListener("pointermove", (e) => {
-      const r = stage.getBoundingClientRect();
-      px = e.clientX - r.left - r.width / 2;
-      py = e.clientY - r.top - r.height / 2;
-    });
-  } else {
-    stage.addEventListener("pointerdown", () => {
-      openTarget = openTarget ? 0 : 1;
-    });
-  }
+  // 按下指针时桌面「稳住」：否则照片在点击完成前就躲开，click 永远落空。
+  // 触屏正好相反：只有手指接触时才推开照片。
+  const isTouch = matchMedia("(hover: none)").matches;
+  let pressing = false;
+  stage.addEventListener("pointerdown", () => { pressing = true; });
+  addEventListener("pointerup", () => { pressing = false; });
+  addEventListener("pointercancel", () => { pressing = false; });
 
-  cards.forEach((el, i) => {
-    el.addEventListener("click", () => {
-      const k = order.indexOf(i);
-      if (k === N - 1) return;
-      order.splice(k, 1);
-      order.push(i);
-      order.forEach((c, z) => { cards[c].style.zIndex = z + 1; });
-      pop[i] = 1;
-    });
+  stage.addEventListener("pointerleave", () => { px = py = -9999; });
+  stage.addEventListener("pointermove", (e) => {
+    const r = stage.getBoundingClientRect();
+    px = e.clientX - r.left - r.width / 2;
+    py = e.clientY - r.top - r.height / 2;
   });
 
+  /* ── 拿起 / 放下 ──────────────────────────────────────────── */
+
+  let scrim = null;
+  const ease = "cubic-bezier(.19, 1, .22, 1)";
+
+  const makeScrim = () => {
+    scrim = document.createElement("div");
+    scrim.className = "pile-scrim";
+    document.body.appendChild(scrim);
+    requestAnimationFrame(() => scrim.classList.add("on"));
+    scrim.addEventListener("click", putDown);
+  };
+
+  const pickUp = (i, el) => {
+    if (heldIdx !== -1) return;
+    heldIdx = i;
+
+    // 记录屏幕上的当前状态，把元素提升到 body 的 fixed 定位上做动画
+    const bb = el.getBoundingClientRect();
+    const memo = {
+      left: bb.left, top: bb.top,
+      width: bb.width, height: bb.height,
+      rot: cur[i].r * 0.25,            // 拿起时照片基本转正，留一点歪
+    };
+    el._memo = memo;
+    el.classList.add("pile-card--held");
+    Object.assign(el.style, {
+      position: "fixed",
+      left: memo.left + "px",
+      top: memo.top + "px",
+      width: memo.width + "px",
+      height: memo.height + "px",
+      margin: "0",
+      zIndex: "1200",
+      transition: "none",
+      transform: `rotate(${cur[i].r.toFixed(2)}deg)`,
+    });
+
+    makeScrim();
+
+    const targetH = Math.min(innerHeight * 0.68, innerWidth * 0.8 * (5 / 4));
+    const targetW = targetH * (4 / 5);
+
+    requestAnimationFrame(() => {
+      Object.assign(el.style, {
+        transition: `left ${ease} .55s, top ${ease} .55s, width ${ease} .55s, height ${ease} .55s, transform ${ease} .55s`,
+        left: (innerWidth - targetW) / 2 + "px",
+        top: (innerHeight - targetH) / 2 + "px",
+        width: targetW + "px",
+        height: targetH + "px",
+        transform: `rotate(${memo.rot.toFixed(2)}deg) scale(1)`,
+        boxShadow: "0 40px 90px -30px rgba(26,24,20,.55)",
+      });
+    });
+    el.addEventListener("click", putDown);
+  };
+
+  const putDown = () => {
+    if (heldIdx === -1) return;
+    const i = heldIdx;
+    const el = cards[i];
+    const memo = el._memo;
+    heldIdx = -1;
+    returnIdx = i;
+
+    el.removeEventListener("click", putDown);
+    if (scrim) {
+      const s = scrim;                      // 局部捕获，避免置 null 后闭包失效
+      s.classList.remove("on");
+      setTimeout(() => s.remove(), 400);
+      scrim = null;
+    }
+
+    // 回到桌面上的原位，随后归还给普通定位与主循环
+    Object.assign(el.style, {
+      left: memo.left + "px",
+      top: memo.top + "px",
+      width: memo.width + "px",
+      height: memo.height + "px",
+      boxShadow: "",
+      transform: `rotate(${cur[i].r.toFixed(2)}deg)`,
+    });
+    setTimeout(() => {
+      el.classList.remove("pile-card--held");
+      el.style.cssText = "";
+      returnIdx = -1;
+    }, 580);
+  };
+
+  addEventListener("keydown", (e) => { if (e.key === "Escape") putDown(); });
+
+  cards.forEach((el, i) => {
+    el.addEventListener("click", () => pickUp(i, el));
+  });
+
+  /* ── 主循环 ──────────────────────────────────────────────── */
+
+  let dt = 0.016;
+  let last = performance.now();
+  let rafId = null;
+  let inView = true;
+
   const apply = (i, t) => {
+    if (i === heldIdx || i === returnIdx) return;   // 拿起/放回中不参与
     const tr = trait[i];
-    const u = N > 1 ? i / (N - 1) - 0.5 : 0;
-    const e = openCur < 0.001 ? 0 : openCur * (2 - openCur);   // 展开量再缓一层
 
-    // 目标位姿 = 桌面散布姿态 与 扇形姿态 按 e 插值
-    const fanX = u * Math.min(rectW * 0.78, 340) - 10;
-    const fanY = -(1 - Math.pow(Math.abs(u) * 2, 1.35)) * (58 + tr.arcJit);
-    const fanR = u * 42;
-    const dxDesk = tr.gx * rectW;
-    const dyDesk = tr.gy * rectH;
-    let tx = dxDesk + (fanX - dxDesk) * e;
-    let ty = dyDesk + (fanY - dyDesk) * e;
-    let tr_ = tr.rotS + (fanR - tr.rotS) * e;
-    let ts = 1 + e * 0.03;
+    // 目标：桌面上的家
+    let tx = tr.gx * rectW;
+    let ty = tr.gy * rectH;
+    let tr_ = tr.rotS;
+    let ts = 1;
 
-    // 待机呼吸（展开时弱一点）
-    if (!reduceMotion) ty += Math.sin(t * tr.sp + tr.ph) * 3.6 * (1 - 0.5 * e);
+    // 待机呼吸
+    if (!reduceMotion) ty += Math.sin(t * tr.sp + tr.ph) * 3.4;
 
-    // 指针靠近时轻微躲闪
-    if (openCur > 0.15 && canHover) {
+    // 「手拂过桌面」：靠近指针的照片被推开让出空间
+    const repelOn = isTouch ? pressing : (px > -9000 && !pressing);
+    if (repelOn) {
       const dx = tx - px, dy = ty - py;
       const d = Math.hypot(dx, dy);
-      const reach = rectW * 0.34;
+      const reach = Math.min(rectW * 0.55, 310);
       if (d < reach && d > 0.01) {
-        const f = (1 - d / reach) * (1 - d / reach) * 20;
+        const k = 1 - d / reach;
+        const f = k * k * (88 + 34 * k);       // 越近推得越远
         tx += (dx / d) * f;
         ty += (dy / d) * f;
-        ts += f / 200;
+        tr_ += (dx / d) * k * 7;               // 顺着推开方向微微偏头
+        ts -= k * k * 0.05;                    // 略微压低一点
       }
     }
 
-    // 点击冲量的弹性衰减
-    if (pop[i] > 0.005) {
-      ts += pop[i] * 0.08;
-      ty -= pop[i] * 10;
-      pop[i] *= Math.exp(-0.09);
-    } else pop[i] = 0;
-
     // 逐卡独立缓动 → 有机拖尾
-    const k = 1 - Math.exp(-trait[i].speed * dt);
+    const k = 1 - Math.exp(-tr.speed * dt);
     const c = cur[i];
     c.x += (tx - c.x) * k;
     c.y += (ty - c.y) * k;
@@ -131,11 +208,6 @@
       `rotate(${c.r.toFixed(2)}deg) scale(${c.s.toFixed(3)})`;
   };
 
-  let dt = 0.016;
-  let last = performance.now();
-  let rafId = null;
-  let inView = true;
-
   const tick = (now) => {
     rafId = requestAnimationFrame(tick);
     dt = Math.min(0.05, (now - last) / 1000);
@@ -143,8 +215,6 @@
     if (document.hidden || !inView) return;
 
     const t = now / 1000;
-    openCur += (openTarget - openCur) * Math.min(1, dt * 3.4);
-    if (Math.abs(openTarget - openCur) < 0.0004) openCur = openTarget;
     for (let i = 0; i < N; i++) apply(i, t);
   };
 
@@ -152,8 +222,6 @@
   const stop = () => { cancelAnimationFrame(rafId); rafId = null; };
 
   if (reduceMotion) {
-    // 弱动效偏好：直接摆好静态桌面形态，不做循环
-    openCur = openTarget = 0;
     measure();
     const savedDt = dt;
     dt = 1;
