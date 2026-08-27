@@ -17,15 +17,18 @@
   const canHover = matchMedia("(hover: hover)").matches;
 
   // 每张卡的固有特征（确定性伪随机，刷新后姿态不变）
+  // gx/gy 是「摊在桌上」的归一化散布位：按网格分层再抖动，保证铺开不扎堆
+  const cols = Math.max(2, Math.round(Math.sqrt(N * 1.4)));
+  const rows = Math.ceil(N / cols);
   const trait = cards.map((_, i) => {
     const r = (n) => {
       const x = Math.sin(i * 127.1 + n * 311.7) * 43758.5453;
       return x - Math.floor(x);
     };
     return {
-      rotS: (r(1) - 0.5) * 24,       // 堆叠时的随机角度
-      ox: (r(2) - 0.5) * 34,         // 堆叠时的水平散落
-      oy: (r(3) - 0.5) * 30,         // 堆叠时的垂直散落
+      rotS: (r(1) - 0.5) * 26,       // 散布时的随机角度 ±13°
+      gx: ((i % cols) + 0.25 + r(2) * 0.5) / cols - 0.5,
+      gy: (Math.floor(i / cols) + 0.28 + r(3) * 0.44) / rows - 0.5,
       arcJit: (r(4) - 0.5) * 18,     // 扇形弧线的高低错落
       speed: 6.5 + r(5) * 4.5,       // 缓动速度差 → 拖尾感
       sp: 0.7 + r(6) * 0.9,          // 呼吸漂浮频率
@@ -39,11 +42,15 @@
   let openCur = 0, openTarget = 0;
   let px = -9999, py = -9999;                  // 指针相对 stage 中心的坐标
   let pop = new Float32Array(N);               // 点击弹跳冲量
-  let rectW = 0;
+  let rectW = 0, rectH = 0;
 
   order.forEach((ci, zi) => { cards[ci].style.zIndex = zi + 1; });
 
-  const measure = () => { rectW = stage.getBoundingClientRect().width; };
+  const measure = () => {
+    const r = stage.getBoundingClientRect();
+    rectW = r.width;
+    rectH = r.height;
+  };
   measure();
   addEventListener("resize", measure);
 
@@ -77,17 +84,19 @@
     const u = N > 1 ? i / (N - 1) - 0.5 : 0;
     const e = openCur < 0.001 ? 0 : openCur * (2 - openCur);   // 展开量再缓一层
 
-    // 目标位姿 = 堆叠姿态 与 扇形姿态 按 e 插值（整体左偏一点，给右侧留呼吸）
-    const fanX = u * Math.min(rectW * 0.78, 340) - 14;
+    // 目标位姿 = 桌面散布姿态 与 扇形姿态 按 e 插值
+    const fanX = u * Math.min(rectW * 0.78, 340) - 10;
     const fanY = -(1 - Math.pow(Math.abs(u) * 2, 1.35)) * (58 + tr.arcJit);
     const fanR = u * 42;
-    let tx = tr.ox * 0.7 + (fanX - tr.ox * 0.7) * e;
-    let ty = tr.oy + (fanY - tr.oy) * e;
+    const dxDesk = tr.gx * rectW;
+    const dyDesk = tr.gy * rectH;
+    let tx = dxDesk + (fanX - dxDesk) * e;
+    let ty = dyDesk + (fanY - dyDesk) * e;
     let tr_ = tr.rotS + (fanR - tr.rotS) * e;
     let ts = 1 + e * 0.03;
 
     // 待机呼吸（展开时弱一点）
-    if (!reduceMotion) ty += Math.sin(t * tr.sp + tr.ph) * 3.2 * (1 - 0.5 * e);
+    if (!reduceMotion) ty += Math.sin(t * tr.sp + tr.ph) * 3.6 * (1 - 0.5 * e);
 
     // 指针靠近时轻微躲闪
     if (openCur > 0.15 && canHover) {
@@ -143,8 +152,8 @@
   const stop = () => { cancelAnimationFrame(rafId); rafId = null; };
 
   if (reduceMotion) {
-    // 弱动效偏好：直接摆好静态半开形态，不做循环
-    openCur = openTarget = 0.42;
+    // 弱动效偏好：直接摆好静态桌面形态，不做循环
+    openCur = openTarget = 0;
     measure();
     const savedDt = dt;
     dt = 1;
