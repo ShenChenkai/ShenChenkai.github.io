@@ -711,6 +711,19 @@ a:hover { opacity: 0.7; }
   pointer-events: none;
 }
 
+/* Full-viewport ambient thought-field (js/thought-field.js). Same layering as
+   the particle field: fixed, behind all content, non-interactive. Softened a
+   touch so the feed stays readable on top. */
+.thought-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
 .music-row {
   position: relative;
   z-index: 1;

@@ -13,3 +13,8 @@ worker/.wrangler/
 .codegraph/
 .mcp.json
 .claude/
+
+# Agent workspace state & redundant archive
+.codex/
+.zcode/
+figma-brand-package.zip

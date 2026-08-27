@@ -1,0 +1,20 @@
+@import "./variables.css";
+@theme {
+  --color-figma-ink-black: var(--color-ink-black);
+  --color-figma-paper-white: var(--color-paper-white);
+  --color-figma-soft-mist: var(--color-soft-mist);
+  --color-figma-graphite: var(--color-graphite);
+  --color-figma-electric-indigo: var(--color-electric-indigo);
+  --color-figma-figma-cyan: var(--color-figma-cyan);
+  --color-figma-figma-green: var(--color-figma-green);
+  --color-figma-figma-orange: var(--color-figma-orange);
+  --color-figma-lime-wash: var(--color-lime-wash);
+  --color-figma-lilac: var(--color-lilac);
+  --color-figma-blush: var(--color-blush);
+  --color-figma-aqua-mist: var(--color-aqua-mist);
+  --color-figma-earworm-teal: var(--color-earworm-teal);
+  --color-figma-mustard: var(--color-mustard);
+  --font-figma-sans: figmaSans, Inter, sans-serif;
+  --font-figma-mono: figmaMono, ui-monospace, monospace;
+  --shadow-figma-xl: var(--shadow-xl);
+}

@@ -1,0 +1,269 @@
+{{/* 风格样品页：三个方向的首页视觉初稿（照片占位图来自 picsum，之后换成自己的摄影作品） */}}
+<style>
+  /* ===== 样品页全局（自包含，不影响站点样式） ===== */
+  .site-header, .site-footer { display: none; }
+  .stylelab { font-synthesis-weight: none; }
+
+  .stylelab {
+    --sans: -apple-system, "SF Pro Display", "PingFang SC", "Helvetica Neue", "Noto Sans SC", sans-serif;
+    --serif: Georgia, "Songti SC", "STSong", "Noto Serif SC", serif;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  .stylelab section { position: relative; }
+  .stylelab img { display: block; object-fit: cover; background: #ececea; }
+
+  /* 右上角方向切换器 */
+  .sl-switch {
+    position: fixed; top: 16px; right: 16px; z-index: 99;
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px; background: #fff; border: 1px solid #e5e5e3; border-radius: 50px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08); font: 12px/1 var(--sans);
+  }
+  .sl-switch span { color: #999; padding: 0 6px 0 10px; }
+  .sl-switch a { padding: 7px 12px; border-radius: 50px; color: #333; text-decoration: none; }
+  .sl-switch a:hover { background: #f2f2f0; }
+
+  /* 各方向的标签角标 */
+  .sl-tag {
+    position: absolute; top: 24px; left: 24px; z-index: 5;
+    padding: 6px 12px; border-radius: 8px; background: #111; color: #fff;
+    font: 12px/1 var(--mono); letter-spacing: 1px;
+  }
+
+  /* ===================== 方向 A「纸」—— 暖纸色 · 衬线 · 编辑感（参考 Claude 官网） ===================== */
+  .sl-a { background: #faf9f5; color: #1f1e1b; font-family: var(--serif); }
+  .sl-a .wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+  .sl-a nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 0; font-size: 15px;
+  }
+  .sl-a nav .logo { font-size: 20px; font-weight: 600; letter-spacing: .5px; }
+  .sl-a nav .links { display: flex; gap: 28px; color: #6e6a61; }
+  .sl-a nav .links a { color: inherit; text-decoration: none; }
+  .sl-a .hero {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
+    align-items: center; padding: 72px 0 96px;
+  }
+  .sl-a h1 { margin: 0; font-size: clamp(44px, 5.2vw, 68px); font-weight: 500; line-height: 1.18; letter-spacing: 1px; }
+  .sl-a .hero p.sub { margin: 22px 0 34px; font-size: 19px; color: #6e6a61; line-height: 1.7; }
+  .sl-a .btns { display: flex; gap: 12px; }
+  .sl-a .btn {
+    display: inline-block; padding: 13px 26px; border-radius: 12px;
+    font: 15px/1 var(--sans); text-decoration: none;
+  }
+  .sl-a .btn.pri { background: #191817; color: #faf9f5; }
+  .sl-a .btn.ghost { border: 1px solid #d8d4cb; color: #191817; }
+  .sl-a .hero-photo img { width: 100%; height: 560px; border-radius: 20px; }
+  .sl-a .strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+    padding: 24px 0 110px; border-top: 1px solid #e9e6de;
+  }
+  .sl-a .strip figure { margin: 28px 0 0; }
+  .sl-a .strip img { width: 100%; height: 300px; border-radius: 8px; }
+  .sl-a .strip figcaption { margin-top: 14px; font-size: 15px; color: #6e6a61; }
+  .sl-a .strip figcaption b { display: block; color: #1f1e1b; font-weight: 600; margin-bottom: 3px; }
+  .sl-a .quote {
+    max-width: 620px; margin: 0 auto; padding: 0 0 120px; text-align: center;
+  }
+  .sl-a .quote p { margin: 0; font-size: 22px; line-height: 1.8; }
+  .sl-a .quote small { display: block; margin-top: 18px; font: 13px/1 var(--sans); color: #a39e93; letter-spacing: 1px; }
+
+  /* ===================== 方向 B「馆」—— 纯白 · 无衬线 · 画廊感（参考 ElevenLabs / Intercom） ===================== */
+  .sl-b { background: #fff; color: #0d0d0c; font-family: var(--sans); }
+  .sl-b .wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+  .sl-b nav { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; font-size: 14px; }
+  .sl-b nav .logo { font: 600 15px/1 var(--mono); letter-spacing: 2px; }
+  .sl-b nav .links { display: flex; gap: 26px; color: #555; }
+  .sl-b nav .links a { color: inherit; text-decoration: none; }
+  .sl-b nav .mini { display: flex; gap: 10px; align-items: center; }
+  .sl-b .pill {
+    display: inline-block; padding: 10px 20px; border-radius: 50px;
+    font: 500 14px/1 var(--sans); text-decoration: none;
+  }
+  .sl-b .pill.pri { background: #0d0d0c; color: #fff; }
+  .sl-b .pill.ghost { border: 1px solid #e2e2e0; color: #0d0d0c; }
+  .sl-b .hero {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px;
+    align-items: end; padding: 88px 0 56px;
+  }
+  .sl-b h1 { margin: 0; font-size: clamp(40px, 4.6vw, 60px); font-weight: 500; line-height: 1.12; letter-spacing: -1.5px; }
+  .sl-b .hero .right p { margin: 0 0 24px; font-size: 16px; color: #6f6f6c; line-height: 1.65; }
+  .sl-b .hero .btns { display: flex; gap: 10px; }
+  .sl-b .gallery {
+    background: #f6f6f4; border-radius: 24px; padding: 28px; margin-bottom: 110px;
+  }
+  .sl-b .gallery .rail {
+    display: flex; gap: 20px; align-items: flex-end; overflow: hidden;
+  }
+  .sl-b .gallery .rail img { border-radius: 10px; flex: none; }
+  .sl-b .gallery .cap {
+    display: flex; justify-content: space-between; margin-top: 22px;
+    font: 12px/1.5 var(--mono); color: #8a8a86; letter-spacing: .5px;
+  }
+
+  /* ===================== 方向 C「幕」—— 白底 · 大字 · 手绘趣味（参考 Notion） ===================== */
+  .sl-c { background: #fff; color: #141414; font-family: var(--sans); }
+  .sl-c .wrap { max-width: 1080px; margin: 0 auto; padding: 0 48px; text-align: center; }
+  .sl-c nav { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; font-size: 14px; }
+  .sl-c nav .links { display: flex; gap: 24px; justify-content: center; flex: 1; }
+  .sl-c nav .links a { color: #333; text-decoration: none; }
+  .sl-c .pill {
+    display: inline-block; padding: 11px 22px; border-radius: 10px;
+    font: 500 15px/1 var(--sans); text-decoration: none;
+  }
+  .sl-c .pill.pri { background: #141414; color: #fff; }
+  .sl-c .pill.soft { background: #eef3ea; color: #1d4118; }
+  .sl-c .faces { display: flex; justify-content: center; gap: 14px; padding: 64px 0 36px; }
+  .sl-c .faces img { width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid #141414; }
+  .sl-c .faces img:nth-child(2n) { border-color: #2f6e2f; }
+  .sl-c .faces img:nth-child(3n) { border-color: #d97a32; }
+  .sl-c h1 { margin: 0; font-size: clamp(42px, 5.4vw, 70px); font-weight: 700; line-height: 1.15; letter-spacing: -1.5px; }
+  .sl-c h1 mark {
+    background: #cdebc0; color: inherit; padding: 0 14px; border-radius: 18px;
+  }
+  .sl-c .sub { margin: 20px auto 30px; max-width: 520px; font-size: 17px; color: #6b6b68; line-height: 1.65; }
+  .sl-c .btns { display: flex; justify-content: center; gap: 12px; }
+  .sl-c .doodle { position: absolute; pointer-events: none; }
+  .sl-c .prints {
+    display: flex; justify-content: center; gap: 34px;
+    padding: 90px 0 130px;
+  }
+  .sl-c .prints figure {
+    margin: 0; background: #fff; padding: 12px 12px 16px;
+    border: 1px solid #e8e8e6; border-radius: 6px;
+    box-shadow: 0 14px 34px rgba(0,0,0,.10);
+  }
+  .sl-c .prints img { width: 240px; height: 300px; border-radius: 2px; }
+  .sl-c .prints figcaption { margin-top: 12px; font: 13px/1 var(--serif); color: #555; }
+  .sl-c .prints figure:nth-child(1) { transform: rotate(-3deg); }
+  .sl-c .prints figure:nth-child(3) { transform: rotate(2.5deg); }
+</style>
+
+<div class="stylelab">
+  <div class="sl-switch">
+    <span>方向</span>
+    <a href="#sl-a">A 纸</a><a href="#sl-b">B 馆</a><a href="#sl-c">C 幕</a>
+  </div>
+
+  {{/* ============ A 纸 ============ */}}
+  <section class="sl-a" id="sl-a">
+    <i class="sl-tag">方向 A · 纸（暖衬线 · 编辑感）</i>
+    <div class="wrap">
+      <nav>
+        <span class="logo">陈楷 Chenkai</span>
+        <div class="links"><a href="#">摄影</a><a href="#">想法</a><a href="#">音乐</a></div>
+        <a class="btn ghost" href="#">关于我</a>
+      </nav>
+      <div class="hero">
+        <div>
+          <h1>把时间，<br>显影成照片。</h1>
+          <p class="sub">这里是陈楷的个人主页。我拍照片、写想法、听歌——<br>都放在这个安静的房间里。</p>
+          <div class="btns">
+            <a class="btn pri" href="#">进入相册</a>
+            <a class="btn ghost" href="#">最近在想什么</a>
+          </div>
+        </div>
+        <div class="hero-photo">
+          <img src="https://picsum.photos/seed/ck-hero-a/900/1120" alt="">
+        </div>
+      </div>
+      <div class="strip">
+        <figure>
+          <img src="https://picsum.photos/seed/ck-a1/640/600" alt="">
+          <figcaption><b>巷口的光</b>2026.07 · 35mm</figcaption>
+        </figure>
+        <figure>
+          <img src="https://picsum.photos/seed/ck-a2/640/600" alt="">
+          <figcaption><b>海边的风</b>2026.05 · 胶片</figcaption>
+        </figure>
+        <figure>
+          <img src="https://picsum.photos/seed/ck-a3/640/600" alt="">
+          <figcaption><b>凌晨的书桌</b>2026.03 · 数码</figcaption>
+        </figure>
+      </div>
+      <div class="quote">
+        <p>“摄影是把来不及记住的瞬间，<br>交给一张纸保管。”</p>
+        <small>—— 想法 · 2026.08.14</small>
+      </div>
+    </div>
+  </section>
+
+  {{/* ============ B 馆 ============ */}}
+  <section class="sl-b" id="sl-b">
+    <i class="sl-tag">方向 B · 馆（纯白无衬线 · 画廊感）</i>
+    <div class="wrap">
+      <nav>
+        <span class="logo">CHENKAI.SPACE</span>
+        <div class="links"><a href="#">摄影</a><a href="#">想法</a><a href="#">音乐</a><a href="#">关于</a></div>
+        <div class="mini"><a class="pill pri" href="#">联系我</a></div>
+      </nav>
+      <div class="hero">
+        <h1>光，与它的形状。</h1>
+        <div class="right">
+          <p>这里陈列我拍下的照片——街角、海、凌晨的书桌。不追热点，不赶更新，拍到喜欢的才放上来。</p>
+          <div class="btns">
+            <a class="pill pri" href="#">看照片</a>
+            <a class="pill ghost" href="#">写下来的想法</a>
+          </div>
+        </div>
+      </div>
+      <div class="gallery">
+        <div class="rail">
+          <img src="https://picsum.photos/seed/ck-b1/420/540" width="420" height="540" alt="">
+          <img src="https://picsum.photos/seed/ck-b2/560/420" width="560" height="420" alt="">
+          <img src="https://picsum.photos/seed/ck-b3/460/580" width="460" height="580" alt="">
+          <img src="https://picsum.photos/seed/ck-b4/540/400" width="540" height="400" alt="">
+          <img src="https://picsum.photos/seed/ck-b5/430/550" width="430" height="550" alt="">
+        </div>
+        <div class="cap"><span>FIG.01 — 05 / 2026 上半年</span><span>35mm · 胶片 · 数码</span></div>
+      </div>
+    </div>
+  </section>
+
+  {{/* ============ C 幕 ============ */}}
+  <section class="sl-c" id="sl-c">
+    <i class="sl-tag">方向 C · 幕（大字 + 手绘趣味）</i>
+    <div class="wrap">
+      <nav>
+        <div class="links"><a href="#">摄影</a><a href="#">想法</a><a href="#">音乐</a><a href="#">关于</a></div>
+        <a class="pill pri" href="#">打个招呼</a>
+      </nav>
+      <svg class="doodle" style="top:130px; left:4%;" width="90" height="60" viewBox="0 0 90 60" fill="none">
+        <path d="M6 44 C 20 10, 44 8, 40 30 S 66 54, 84 20" stroke="#141414" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <svg class="doodle" style="top:110px; right:6%;" width="70" height="70" viewBox="0 0 70 70" fill="none">
+        <path d="M35 6 L40 28 L62 35 L40 42 L35 64 L30 42 L8 35 L30 28 Z" stroke="#d97a32" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+      <div class="faces">
+        <img src="https://picsum.photos/seed/ck-c1/112/112" alt="">
+        <img src="https://picsum.photos/seed/ck-c2/112/112" alt="">
+        <img src="https://picsum.photos/seed/ck-c3/112/112" alt="">
+        <img src="https://picsum.photos/seed/ck-c4/112/112" alt="">
+        <img src="https://picsum.photos/seed/ck-c5/112/112" alt="">
+      </div>
+      <h1>照片，是我<mark>记得</mark><br>世界的方式。</h1>
+      <p class="sub">陈楷的角落——放照片、写想法、听歌。慢慢拍，慢慢写。</p>
+      <div class="btns">
+        <a class="pill pri" href="#">看最新一组照片</a>
+        <a class="pill soft" href="#">想法墙</a>
+      </div>
+      <svg class="doodle" style="bottom:120px; left:12%;" width="70" height="90" viewBox="0 0 70 90" fill="none">
+        <path d="M10 8 C 40 20, 52 44, 46 78 M46 78 L34 62 M46 78 L58 66" stroke="#141414" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="prints">
+        <figure>
+          <img src="https://picsum.photos/seed/ck-p1/480/600" alt="">
+          <figcaption>巷口的光 · 07</figcaption>
+        </figure>
+        <figure>
+          <img src="https://picsum.photos/seed/ck-p2/480/600" alt="">
+          <figcaption>海边的风 · 05</figcaption>
+        </figure>
+        <figure>
+          <img src="https://picsum.photos/seed/ck-p3/480/600" alt="">
+          <figcaption>凌晨的书桌 · 03</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+</div>
