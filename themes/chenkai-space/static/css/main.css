@@ -572,10 +572,10 @@ html, body { overflow-x: hidden; }
 
 .display {
   font-family: var(--font-serif);
-  font-size: clamp(2.45rem, 4.7vw, 4.25rem);
-  line-height: 1.18;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: clamp(3.2rem, 7.6vw, 6.5rem);
+  line-height: 1.06;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 .display-l1 { display: block; color: var(--text); }
 .display-l2 { display: block; color: var(--muted); }

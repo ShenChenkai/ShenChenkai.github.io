@@ -59,7 +59,7 @@
     spans.forEach((s, i) => c.fillText(s.textContent, 0, lineH * (i + 0.5)));
 
     const data = c.getImageData(0, 0, W, H).data;
-    const step = Math.max(3, Math.round(fontSize / 16));
+    const step = Math.max(3, Math.round(fontSize / 11));
     parts = [];
     for (let y = 0; y < H; y += step) {
       for (let x = 0; x < W; x += step) {
@@ -102,7 +102,7 @@
     ctx.clearRect(0, 0, W, H);
 
     const reach = fontSize * 1.15;
-    const dot = Math.max(1.6, fontSize / 34);
+    const dot = Math.max(1.8, fontSize / 26);
 
     for (let g = 0; g < 3; g++) {
       ctx.fillStyle = groups[g] || "#888";
@@ -129,7 +129,7 @@
         p.x += p.vx;
         p.y += p.vy;
 
-        const wob = Math.sin(t * 1.3 + p.ph) * 0.6;
+        const wob = Math.sin(t * 1.3 + p.ph) * 0.9;
         ctx.fillRect(p.x, p.y + wob, d, d);
       }
     }
