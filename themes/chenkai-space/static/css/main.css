@@ -579,11 +579,13 @@ html, body { overflow-x: hidden; }
 }
 .display-l1 { display: block; color: var(--text); }
 .display-l2 { display: block; color: var(--muted); }
+.display-lx { display: block; color: var(--accent); }
 
 /* 粒子标题形态（js/particle-title.js）：真实文字只负责占位排版，
    canvas 覆盖其上渲染粒子字形；弱动效/无 JS 时保持纯文本 */
 .display { position: relative; }
 .display--particles .display-l1,
+.display--particles .display-lx,
 .display--particles .display-l2 { visibility: hidden; }
 #hero-particle-canvas {
   position: absolute;

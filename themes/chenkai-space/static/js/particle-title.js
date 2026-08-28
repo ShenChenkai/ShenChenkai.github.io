@@ -13,19 +13,23 @@
   if (!h1 || !canvas) return;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  const spans = Array.from(h1.querySelectorAll(".display-l1, .display-l2"));
+  const spans = Array.from(h1.querySelectorAll(".display-l1, .display-lx, .display-l2"));
   if (!spans.length) return;
 
   const dpr = () => Math.min(2, window.devicePixelRatio || 1);
   let parts = [];            // {tx,ty,x,y,vx,vy,g,st,ph}
-  let groups = [];           // 每帧从 CSS 变量读取的 [墨色, 灰调]
+  let groups = [];           // 每帧从 CSS 变量读取的 [墨色, 强调色, 灰调]
   let W = 0, H = 0, fontSize = 0;
   let mx = -9999, my = -9999;
   let rafId = null, inView = true;
 
   const readColors = () => {
     const cs = getComputedStyle(document.documentElement);
-    return [cs.getPropertyValue("--text").trim(), cs.getPropertyValue("--muted").trim()];
+    return [
+      cs.getPropertyValue("--text").trim(),
+      cs.getPropertyValue("--accent").trim(),
+      cs.getPropertyValue("--muted").trim(),
+    ];
   };
 
   const build = () => {
@@ -65,7 +69,7 @@
             x: W * (0.3 + Math.random() * 0.5),
             y: H * (0.5 + (Math.random() - 0.5) * 1.6),
             vx: 0, vy: 0,
-            g: y < lineH ? 0 : 1,                 // 首行墨色，其余灰调
+            g: Math.min(2, Math.floor(y / lineH)), // 按行取色：墨 / 强调 / 灰
             st: 0.012 + Math.random() * 0.009,    // 弹簧刚度差 → 聚散拖尾
             ph: Math.random() * Math.PI * 2,
           });
@@ -100,7 +104,7 @@
     const reach = fontSize * 1.15;
     const dot = Math.max(1.6, fontSize / 34);
 
-    for (let g = 0; g < 2; g++) {
+    for (let g = 0; g < 3; g++) {
       ctx.fillStyle = groups[g] || "#888";
       const d = g === 0 ? dot * 1.18 : dot;   // 首行墨点稍大，撑出层级
       for (let i = 0; i < parts.length; i++) {
