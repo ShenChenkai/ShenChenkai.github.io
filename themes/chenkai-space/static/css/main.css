@@ -562,17 +562,14 @@ html, body { overflow-x: hidden; }
 .home-hero .wrap { width: 100%; }
 
 .hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(330px, 0.88fr);
-  align-items: center;
-  column-gap: clamp(2.5rem, 5vw, 4.5rem);
+  position: relative;
 }
 
-.hero-copy { padding-right: 1rem; }
+.hero-copy { width: 72%; }
 
 .display {
   font-family: var(--font-serif);
-  font-size: clamp(3.2rem, 7.6vw, 6.5rem);
+  font-size: clamp(3.4rem, 12.5vw, 13rem);
   line-height: 1.06;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -595,6 +592,15 @@ html, body { overflow-x: hidden; }
 }
 
 /* desk photo pile（交互逻辑在 js/photo-pile.js） */
+
+.hero-pile {
+  position: absolute;
+  top: 50%;
+  right: clamp(0.5rem, 3vw, 3rem);
+  transform: translateY(-50%);
+  width: min(46%, 620px);
+  z-index: 2;              /* 照片压在粒子标题上层，遮挡是构图的一部分 */
+}
 
 .photo-pile {
   position: relative;
@@ -759,8 +765,14 @@ html, body { overflow-x: hidden; }
 .st-mark { color: var(--accent); margin: 0 0.4em; font-style: normal; }
 
 @media (max-width: 960px) {
-  .hero-grid { grid-template-columns: 1fr; row-gap: 3.5rem; }
-  .hero-pile { max-width: 480px; margin: 0 auto; width: 100%; }
+  .hero-copy { width: 100%; }
+  .hero-pile {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 480px;
+    margin: 3.5rem auto 0;
+  }
 }
 
 @media (max-width: 760px) {
