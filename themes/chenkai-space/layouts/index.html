@@ -4,9 +4,11 @@
   <section class="home-hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <h1 class="display">
-          <span class="display-l1">收集光影与旋律，</span>
-          <span class="display-l2">也接住每个闪念。</span>
+        <h1 class="display" id="hero-title" aria-label="站在 Technology × Liberal Arts">
+          <span class="display-l1">站在</span>
+          <span class="display-l2">Technology ×</span>
+          <span class="display-l2">Liberal Arts</span>
+          <canvas id="hero-particle-canvas" aria-hidden="true"></canvas>
         </h1>
       </div>
       {{ with .Site.Data.photos }}
@@ -87,5 +89,6 @@
   </section>
 
   <script src="/js/photo-pile.js" defer></script>
+  <script src="/js/particle-title.js" defer></script>
 </div>
 {{ end }}
