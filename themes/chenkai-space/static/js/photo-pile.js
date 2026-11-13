@@ -38,6 +38,7 @@
   const cur = cards.map(() => ({ x: 0, y: 0, r: 0, s: 1 }));
   let px = -9999, py = -9999;                  // 指针相对 stage 中心的坐标
   let rectW = 0, rectH = 0;
+  let halfHeights = [];                        // 每张卡半高，用于把卡片压回桌面范围
   let heldIdx = -1;                            // 正被拿起的那张；-1 无
   let returnIdx = -1;                          // 放回动画进行中的那张；-1 无
   let heldEl = null, heldReady = false;
@@ -48,6 +49,7 @@
     const r = stage.getBoundingClientRect();
     rectW = r.width;
     rectH = r.height;
+    halfHeights = cards.map((c) => c.offsetHeight / 2);
   };
   measure();
   addEventListener("resize", measure);
@@ -82,7 +84,7 @@
   };
 
   const pickUp = (i, el) => {
-    if (heldIdx !== -1) return;
+    if (heldIdx !== -1 || returnIdx !== -1) return;
     heldIdx = i;
 
     // 记录屏幕上的当前状态，把元素提升到 body 的 fixed 定位上做动画
@@ -95,6 +97,10 @@
     el._memo = memo;
     el.classList.add("pile-card--held");
     heldEl = el;
+    // .hero-pile 的 transform 会劫持 position:fixed 的定位基准，
+    // 先把元素挂到 body 上，fixed 才真正相对视口
+    el._home = { parent: el.parentNode, next: el.nextSibling };
+    document.body.appendChild(el);
     Object.assign(el.style, {
       position: "fixed",
       left: memo.left + "px",
@@ -109,8 +115,8 @@
 
     makeScrim();
 
-    const targetH = Math.min(innerHeight * 0.68, innerWidth * 0.8 * (5 / 4));
-    const targetW = targetH * (4 / 5);
+    const targetW = Math.min(innerWidth * 0.8, innerHeight * 0.68);
+    const targetH = targetW;                       // 封面是正方形，拿起时保持 1:1
 
     requestAnimationFrame(() => {
       Object.assign(el.style, {
@@ -161,6 +167,9 @@
       transform: `rotate(${cur[i].r.toFixed(2)}deg)`,
     });
     setTimeout(() => {
+      const home = el._home;
+      if (home && home.parent) home.parent.insertBefore(el, home.next);
+      el._home = null;
       el.classList.remove("pile-card--held");
       el.style.cssText = "";
       returnIdx = -1;
@@ -225,6 +234,10 @@
         ts -= k * k * 0.05;                    // 略微压低一点
       }
     }
+
+    // 上下不出桌面：卡片顶进 sticky 导航栏下面会破版（左右保持可溢出的散漫感）
+    const halfH = halfHeights[i] || 0;
+    ty = Math.min(Math.max(ty, -rectH / 2 + halfH), rectH / 2 - halfH);
 
     // 逐卡独立缓动 → 有机拖尾
     const k = 1 - Math.exp(-tr.speed * dt);

@@ -3,18 +3,10 @@
 
   <section class="home-hero">
     <div class="wrap hero-grid">
-      <div class="hero-copy">
-        <h1 class="display" id="hero-title" aria-label="Technology × Liberal Arts">
-          <span class="display-l1">Technology</span>
-          <span class="display-lx">×</span>
-          <span class="display-l2">Liberal Arts</span>
-          <canvas id="hero-particle-canvas" aria-hidden="true"></canvas>
-        </h1>
-      </div>
-      {{ with .Site.Data.photos }}
-      {{ if .photos }}
+      {{ with .Site.Data.music }}
+      {{ with .albums }}
       <div class="hero-pile">
-        <!-- 毛边纸纹理滤镜：让照片边缘呈粗糙毛毡纸质感 -->
+        <!-- 毛边纸纹理滤镜：让封套边缘呈粗糙毛毡纸质感 -->
         <svg class="pile-defs" aria-hidden="true" focusable="false" width="0" height="0">
           <defs>
             <filter id="paper-edge-a" x="-8%" y="-8%" width="116%" height="116%">
@@ -27,12 +19,15 @@
             </filter>
           </defs>
         </svg>
-        <div class="photo-pile" id="photo-pile" aria-label="随手放在桌面上的照片">
-          {{ range $i, $p := .photos }}
-            <figure class="pile-card">
-              {{ with $p.src }}<img src="{{ . }}" alt="{{ $p.alt }}" draggable="false">{{ end }}
-              {{ with $p.caption }}<figcaption class="pile-cap">{{ . }}</figcaption>{{ end }}
-            </figure>
+        <div class="photo-pile" id="photo-pile" aria-label="随手摊在桌面上的专辑封套">
+          {{ $picked := dict }}
+          {{ range shuffle . }}
+            {{ if and (lt (len $picked) 7) (not (isset $picked .cover)) }}
+              {{ $picked = merge $picked (dict .cover .title) }}
+              <figure class="pile-card">
+                <img src="{{ .cover }}" alt="{{ .title }} — {{ .artist }}" draggable="false">
+              </figure>
+            {{ end }}
           {{ end }}
         </div>
       </div>
@@ -88,7 +83,6 @@
     </div>
   </section>
 
-  <script src="/js/photo-pile.js" defer></script>
-  <script src="/js/particle-title.js" defer></script>
+  <script src="/js/photo-pile.js?v=redesign4" defer></script>
 </div>
 {{ end }}

@@ -34,7 +34,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
 │   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,link}]}——后台管理，勿手改
-│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,source,xUrl}]}——后台管理
+│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,images,source,xUrl}]}——后台管理（images 字段后台暂不支持，仅展示端支持）
 │   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...},tree{style,icon,stroke,seed}}——后台管理
 │
 ├── themes/chenkai-space/
@@ -43,13 +43,13 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   │   ├── baseof.html        # 全站骨架（<html><head><body>）
 │   │   │   ├── list.html          # 列表页模板
 │   │   │   └── single.html        # 单页默认模板
-│   │   ├── index.html             # 首页（hero + tagline）
+│   │   ├── index.html             # 首页（书桌专辑封套堆 hero + 章节列表,无大标题文案）
 │   │   ├── partials/
 │   │   │   ├── head.html          # <head>：注入默认配色 + 粒子参数为 CSS 变量
 │   │   │   ├── header.html        # 顶部导航 + Music 彩色入口块（手绘音符）
 │   │   │   └── footer.html        # 页脚
 │   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
-│   │   ├── thoughts/single.html   # 想法页：全屏氛围背景（thought-field.js，铺满整页生长的枝条+神经元）+ 上方倒序想法列表
+│   │   ├── thoughts/single.html   # 想法页：X 时间线式想法流（头像+名字行+正文+图片网格，无卡片）
 │   │   ├── lab/single.html        # 想法树画廊：6 种树并排展示（program 生成，引 thought-tree.js）
 │   │   ├── admin/single.html      # 后台 UI：连接 / 加专辑 / 想法 / 主题色 / 粒子背景 / 想法树 / 列表
 │   │   └── test/single.html       # 配色卡片预览页
@@ -58,8 +58,11 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │       └── js/
 │           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
 │           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
+│           ├── particles.js       # 全站点阵粒子背景（canvas，每点独立抖动；参数来自 site.json）
+│           ├── photo-pile.js      # 首页书桌专辑堆交互（指针拂动、点击拿起；封面 1:1）
+│           ├── particle-title.js  # hero 文字粒子化（弹簧回弹/指针避让）——首页已移除该标题，文件暂留备用
 │           ├── thought-tree.js    # 想法树生成器：递归生长（根粗梢细/不对称/分叉），仅 lab画廊·admin预览 用
-│           ├── thought-field.js   # /thoughts/ 全屏氛围背景：枝条+神经元节点盘根错节地生长铺满整页，再进入闲置（节点呼吸、偶发突触放电）。读 --accent，明暗模式均可见
+│           ├── thought-field.js   # /thoughts/ 全屏氛围背景（枝条+神经元）——已停止引用，暂留备用
 │           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/想法树）
 │
 └── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）

@@ -1,6 +1,6 @@
 baseURL = "https://ShenChenkai.github.io/"
 languageCode = "zh-CN"
-title = "Chenkai P Space"
+title = "TaoChn"
 theme = "chenkai-space"
 enableEmoji = true
 

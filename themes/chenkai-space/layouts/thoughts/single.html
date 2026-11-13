@@ -3,11 +3,6 @@
 {{ $posts := slice }}
 {{ with $data }}{{ with .posts }}{{ $posts = sort . "date" "desc" }}{{ end }}{{ end }}
 
-{{/* Full-page ambient field: tangled branches + neuron nodes grow across the
-     whole viewport, then idle (rendered by js/thought-field.js). Density scales
-     with how many thoughts exist; the feed reads on top of it. */}}
-<canvas class="thought-field" id="thought-field" data-count="{{ len $posts }}" aria-hidden="true"></canvas>
-
 <div class="thoughts-page">
   <div class="thoughts-head">
     <h1 class="page-title">Thoughts</h1>
@@ -17,11 +12,26 @@
   <div class="thoughts-feed">
     {{ range $posts }}
     <article id="t-{{ .id }}" class="thought thought--{{ default "short" .type }}{{ if eq .source "x" }} thought--x{{ end }}">
-      {{ with .title }}<h2 class="thought-title">{{ . }}</h2>{{ end }}
-      <div class="thought-body">{{ .body | markdownify }}</div>
-      <div class="thought-meta">
-        <time datetime="{{ .date }}">{{ dateFormat "2006 · 01 · 02" .date }}</time>
-        {{ if eq .source "x" }}{{ with .xUrl }}<a class="thought-src" href="{{ . }}" target="_blank" rel="noopener">在 X 查看 ↗</a>{{ end }}{{ end }}
+      <div class="thought-avatar" aria-hidden="true">C</div>
+      <div class="thought-main">
+        <div class="thought-head">
+          <span class="thought-name">Chenkai</span>
+          <span class="thought-handle">@ShenChenkai</span>
+          <span class="thought-sep">·</span>
+          <time class="thought-date" datetime="{{ .date }}">{{ dateFormat "2006 · 01 · 02" .date }}</time>
+        </div>
+        {{ with .title }}<h2 class="thought-title">{{ . }}</h2>{{ end }}
+        <div class="thought-body">{{ .body | markdownify }}</div>
+        {{ with .images }}
+        <div class="thought-images img-n{{ len . }}">
+          {{ range . }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}
+        </div>
+        {{ end }}
+        {{ if eq .source "x" }}
+        {{ with .xUrl }}
+        <div class="thought-meta"><a class="thought-src" href="{{ . }}" target="_blank" rel="noopener">在 X 查看 ↗</a></div>
+        {{ end }}
+        {{ end }}
       </div>
     </article>
     {{ end }}
@@ -29,6 +39,4 @@
 
   <p class="thoughts-empty"{{ if $posts }} hidden{{ end }}>还没有想法，去后台写一条吧。</p>
 </div>
-
-<script src="/js/thought-field.js" defer></script>
 {{ end }}
