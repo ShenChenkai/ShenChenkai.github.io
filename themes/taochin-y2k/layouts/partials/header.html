@@ -9,6 +9,7 @@
   <nav class="nav" aria-label="栏目">
     <a class="nav-btn{{ if .IsHome }} is-on{{ end }}" href="{{ "/" | relURL }}">空间</a>
     <a class="nav-btn{{ if in $here "/thoughts/" }} is-on{{ end }}" href="{{ "thoughts/" | relURL }}">想法</a>
+    <a class="nav-btn{{ if in $here "/tech/" }} is-on{{ end }}" href="{{ "tech/" | relURL }}">技术</a>
     <a class="nav-btn{{ if in $here "/music/" }} is-on{{ end }}" href="{{ "music/" | relURL }}">音乐</a>
     <a class="nav-btn{{ if in $here "/photos/" }} is-on{{ end }}" href="{{ "photos/" | relURL }}">相册</a>
     <a class="nav-btn{{ if in $here "/guestbook/" }} is-on{{ end }}" href="{{ "guestbook/" | relURL }}">留言</a>
