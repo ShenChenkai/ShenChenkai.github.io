@@ -31,6 +31,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   ├── music/_content.gotmpl     #   music 数据 → music-previews.json 的模板（BGM 输出）
 │   ├── thoughts/index.md         #   /thoughts/   想法（含生活动态合并流）
 │   ├── tech/_index.md            #   /tech/       技术笔记根（分类：clinical / biomedical-signal-process / medical-image-process）
+│   ├── tech/clinical/            #   临床实习栏目：绪论 + 10 篇科室笔记 + 19 篇设备笔记 + 1 篇组织架构/信息系统总结（date 用参观日期，跨文内链互引）
 │   ├── photos/index.md           #   /photos/     相册
 │   ├── guestbook/index.md        #   /guestbook/  留言本
 │   ├── admin/index.md            #   /admin/      后台（不进菜单/sitemap；Y2K 风格，管音乐、想法、留言）

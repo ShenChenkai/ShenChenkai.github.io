@@ -1,12 +1,10 @@
 {{ define "main" }}
+{{ if .Sections }}
 <header class="room-head">
   <h1>{{ .Title }}</h1>
 </header>
-{{ $items := .Sections }}
-{{ if eq (len $items) 0 }}{{ $items = sort .RegularPages "Date" "desc" }}{{ end }}
-{{ if $items }}
 <ul class="tech-cards">
-  {{ range $items }}
+  {{ range .Sections }}
   {{ $cover := "" }}
   {{ with .Params.cover }}{{ $cover = . }}{{ end }}
   {{ if not $cover }}
@@ -25,6 +23,43 @@
   {{ end }}
 </ul>
 {{ else }}
+{{ $items := sort .RegularPages "Date" "desc" }}
+{{ $cover := "" }}
+{{ with .Params.cover }}{{ $cover = . }}{{ end }}
+{{ if not $cover }}
+  {{ with .Resources.GetMatch "cover*" }}{{ $cover = .RelPermalink }}{{ end }}
+{{ end }}
+<header class="room-head release-head room-head-sideback">
+  {{ with .Parent }}<p class="room-back"><a href="{{ .RelPermalink }}">« {{ .Title }}</a></p>{{ end }}
+  <div class="release">
+    <div class="release-cover">
+      <span class="sleeve sleeve-lg{{ if not $cover }} is-empty{{ end }}">
+        {{ with $cover }}<img src="{{ . | relURL | safeURL }}" alt="{{ $.Title }}" width="200" height="200">{{ end }}
+      </span>
+    </div>
+    <div class="release-meta">
+      <h1>{{ $.Title }}</h1>
+      <p class="release-sub">{{ len $items }} 篇笔记</p>
+    </div>
+  </div>
+</header>
+{{ if $items }}
+<ol class="track-list">
+  {{ range $i, $item := $items }}
+  <li class="track">
+    <a class="track-static" href="{{ $item.RelPermalink }}">
+      <span class="track-no">{{ add $i 1 }}</span>
+      <span class="track-body">
+        <span class="track-title">{{ $item.Title }}</span>
+        <span class="track-artist">{{ $item.Date.Format "2006-01-02" }}</span>
+      </span>
+      <span class="track-cue" aria-hidden="true">阅读</span>
+    </a>
+  </li>
+  {{ end }}
+</ol>
+{{ else }}
 <p class="empty">还没有内容。</p>
+{{ end }}
 {{ end }}
 {{ end }}
