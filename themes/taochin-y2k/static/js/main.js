@@ -74,15 +74,15 @@
   function open(thumb) {
     ensure();
     clearTimeout(hideTimer);
+    big.onload = null;
     startRect = thumb.getBoundingClientRect();
     active = true;
-    big.classList.remove("is-zoomed");
-    big.style.transform = "none";
     big.src = thumb.currentSrc || thumb.src;
     big.style.width = startRect.width + "px";
     big.style.height = startRect.height + "px";
     big.style.left = startRect.left + "px";
     big.style.top = startRect.top + "px";
+    big.style.transform = "none";
     overlay.hidden = false;
     document.body.classList.add("pic-zoom-lock");
     requestAnimationFrame(() => overlay.classList.add("is-open"));
@@ -90,16 +90,21 @@
     const zoomIn = () => {
       if (!active) return;
       place(startRect);
-      requestAnimationFrame(() => requestAnimationFrame(() => big.classList.add("is-zoomed")));
+      // Drop the inline transform so the transition lands on the centered
+      // resting state (inline style would override any class target).
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (active) big.style.transform = "";
+      }));
     };
-    if (big.complete && big.naturalWidth) zoomIn();
+    // Right after assigning src, complete may still describe the previous
+    // image — only take the fast path when it is really the clicked one.
+    if (big.complete && big.naturalWidth && big.currentSrc === thumb.currentSrc) zoomIn();
     else big.onload = () => { big.onload = null; zoomIn(); };
   }
 
   function close() {
     if (!active || !startRect) return;
     active = false;
-    big.classList.remove("is-zoomed");
     place(startRect);
     overlay.classList.remove("is-open");
     clearTimeout(hideTimer);
