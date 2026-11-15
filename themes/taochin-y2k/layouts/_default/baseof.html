@@ -31,9 +31,9 @@
     </div>
   </aside>
   {{ end }}
-  <script src="{{ "js/main.js" | relURL }}" defer></script>
+  <script src="{{ "js/main.js" | relURL }}?v=2" defer></script>
   <script src="{{ "js/music.js" | relURL }}" defer></script>
-  <script src="{{ "js/guestbook.js" | relURL }}" defer></script>
+  <script src="{{ "js/guestbook.js" | relURL }}?v=2" defer></script>
   {{ if and (not (in .RelPermalink "/write/")) (not (in .RelPermalink "/admin/")) }}
   <script src="{{ "js/bgm.js" | relURL }}" defer></script>
   {{ end }}
