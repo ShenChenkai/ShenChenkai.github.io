@@ -1,6 +1,7 @@
 {
-  "defaultPalette": "paper",
+  "defaultPalette": "newjeans1",
   "defaultMode": "light",
+  "defaultFont": "serif",
   "particles": {
     "gap": 25,
     "dotOpacity": 0.34,
@@ -8,11 +9,5 @@
     "wavePeriod": 8,
     "waveAngle": 72,
     "waveOpacity": 1
-  },
-  "tree": {
-    "style": "ink",
-    "icon": "dot",
-    "stroke": "ink",
-    "seed": 7
   }
 }

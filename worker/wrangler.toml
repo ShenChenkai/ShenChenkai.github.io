@@ -11,6 +11,11 @@ DATA_PATH = "data/music.json"
 SITE_PATH = "data/site.json"
 GUESTBOOK_PATH = "data/guestbook.json"
 
+# R2 bucket for Life photos (created via `wrangler r2 bucket create chenkai-life`).
+[[r2_buckets]]
+binding = "LIFE_BUCKET"
+bucket_name = "chenkai-life"
+
 # Secrets are NOT stored here. Set them with:
 #   wrangler secret put ADMIN_PASSWORD
 #   wrangler secret put GITHUB_TOKEN

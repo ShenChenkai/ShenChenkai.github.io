@@ -1,0 +1,19 @@
+{{ define "main" }}
+<header class="room-head">
+  <h1>技术</h1>
+</header>
+{{ $items := .Sections }}
+{{ if eq (len $items) 0 }}{{ $items = .RegularPages }}{{ end }}
+{{ if $items }}
+<ul class="tech-items">
+  {{ range $items }}
+  <li>
+    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+    {{ if eq .Kind "page" }}<time>{{ .Date.Format "2006-01-02" }}</time>{{ end }}
+  </li>
+  {{ end }}
+</ul>
+{{ else }}
+<p class="empty">还没有内容。</p>
+{{ end }}
+{{ end }}

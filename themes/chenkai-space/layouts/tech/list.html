@@ -1,0 +1,19 @@
+{{ define "main" }}
+<section class="list-page">
+  {{ if not .Parent.IsHome }}<h1 class="page-title">{{ .Title }}</h1>{{ end }}
+  {{ $items := .Sections }}
+  {{ if eq (len $items) 0 }}{{ $items = .RegularPages }}{{ end }}
+  {{ if $items }}
+  <ul class="post-list">
+    {{ range $items }}
+    <li class="post-item">
+      <a href="{{ .Permalink }}">{{ .Title }}</a>
+      {{ if eq .Kind "page" }}<time>{{ .Date.Format "2006-01-02" }}</time>{{ end }}
+    </li>
+    {{ end }}
+  </ul>
+  {{ else }}
+  <p class="post-list-empty">这里还没有内容，敬请期待。</p>
+  {{ end }}
+</section>
+{{ end }}

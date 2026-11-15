@@ -23,6 +23,8 @@ const DEFAULTS = {
   SITE_PATH: "data/site.json",
   THOUGHTS_PATH: "data/thoughts.json",
   GUESTBOOK_PATH: "data/guestbook.json",
+  LIFE_PATH: "data/life.json",
+  TECH_DIR: "content/tech",
 };
 
 // Known palette ids (must match the CSS in static/css/main.css).
@@ -32,6 +34,9 @@ const PALETTES = [
   "newjeans5", "newjeans6", "newjeans7", "newjeans8",
 ];
 
+// Known body-font ids (must match the [data-font] rules in static/css/main.css).
+const FONTS = ["sans", "serif", "mono"];
+
 export default {
   async fetch(request, env) {
     const cors = corsHeaders(request);
@@ -39,9 +44,33 @@ export default {
 
     const url = new URL(request.url);
     try {
+      // Public: serve Life photos straight from R2 (no auth — images are public).
+      if (url.pathname.startsWith("/img/") && request.method === "GET") {
+        const key = decodeURIComponent(url.pathname.slice("/img/".length));
+        const obj = await env.LIFE_BUCKET.get(key);
+        if (!obj) return new Response("Not found", { status: 404 });
+        const headers = new Headers();
+        obj.writeHttpMetadata(headers);
+        headers.set("etag", obj.httpEtag);
+        headers.set("cache-control", "public, max-age=31536000, immutable");
+        return new Response(obj.body, { headers });
+      }
+
       if (url.pathname === "/api/login" && request.method === "POST") {
         requireAuth(request, env);
         return json({ ok: true }, 200, cors);
+      }
+
+      if (url.pathname === "/api/life-upload" && request.method === "POST") {
+        requireAuth(request, env);
+        const ct = request.headers.get("content-type") || "image/jpeg";
+        if (!ct.startsWith("image/")) throw httpErr(400, "只接受图片");
+        const ext = ct.includes("png") ? "png" : ct.includes("webp") ? "webp" : ct.includes("gif") ? "gif" : "jpg";
+        const key = `life/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const bytes = await request.arrayBuffer();
+        if (bytes.byteLength > 8 * 1024 * 1024) throw httpErr(413, "图片过大（压缩后应 <8MB）");
+        await env.LIFE_BUCKET.put(key, bytes, { httpMetadata: { contentType: ct } });
+        return json({ ok: true, url: `${url.origin}/img/${key}` }, 200, cors);
       }
 
       if (url.pathname === "/api/resolve" && request.method === "POST") {
@@ -96,8 +125,11 @@ export default {
           const next = normalizeConfig(data);
           next.defaultPalette = palette;
           next.defaultMode = mode;
+          if (body.defaultFont) {
+            if (!FONTS.includes(body.defaultFont)) throw httpErr(400, "未知字体: " + body.defaultFont);
+            next.defaultFont = body.defaultFont;
+          }
           if (body.particles) next.particles = normalizeParticles(body.particles);
-          if (body.tree) next.tree = normalizeTree(body.tree);
           await ghPut(cfg, env, cfg.sitePath, next, sha, "Update site config: " + palette + "/" + mode);
           return json({ ok: true, config: next }, 200, cors);
         }
@@ -179,6 +211,114 @@ export default {
         }
       }
 
+      if (url.pathname === "/api/categories") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const categories = await listCategories(cfg, env);
+          return json({ ok: true, categories }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { category } = await request.json();
+          const created = await createCategory(cfg, env, category || {});
+          return json({ ok: true, category: created }, 200, cors);
+        }
+      }
+
+      if (url.pathname.startsWith("/api/categories/")) {
+        requireAuth(request, env);
+        const cfg = config(env);
+        const slug = decodeURIComponent(url.pathname.slice("/api/categories/".length));
+
+        if (request.method === "DELETE") {
+          await deleteCategory(cfg, env, slug);
+          return json({ ok: true }, 200, cors);
+        }
+      }
+
+      if (url.pathname === "/api/life") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const { data } = await ghGet(cfg, env, cfg.lifePath);
+          return json({ ok: true, posts: asLifePosts(data) }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { post } = await request.json();
+          const item = normalizeLifePost(post || {});
+          if (!item.text && item.images.length === 0) throw httpErr(400, "文字和照片至少要有一样");
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          posts.unshift(item);
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Add life post");
+          return json({ ok: true, posts }, 200, cors);
+        }
+        if (request.method === "PUT") {
+          const { post } = await request.json();
+          const id = String((post && post.id) || "").trim();
+          if (!id) throw httpErr(400, "缺少 id");
+          const item = normalizeLifePost(post || {});
+          if (!item.text && item.images.length === 0) throw httpErr(400, "文字和照片至少要有一样");
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条");
+          posts[idx] = item;
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Edit life post: " + id);
+          return json({ ok: true, posts }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          const { id } = await request.json();
+          const { data, sha } = await ghGet(cfg, env, cfg.lifePath);
+          const posts = asLifePosts(data);
+          const idx = posts.findIndex((p) => p.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条");
+          posts.splice(idx, 1);
+          await ghPut(cfg, env, cfg.lifePath, { posts }, sha, "Remove life post: " + id);
+          return json({ ok: true, posts }, 200, cors);
+        }
+      }
+
+      if (url.pathname === "/api/notes") {
+        requireAuth(request, env);
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const category = url.searchParams.get("category") || "";
+          const notes = await listNotes(cfg, env, category);
+          return json({ ok: true, notes }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const { note } = await request.json();
+          const category = String((note && note.category) || "").trim().toLowerCase();
+          const created = await createNote(cfg, env, category, note || {});
+          return json({ ok: true, note: created }, 200, cors);
+        }
+      }
+
+      if (url.pathname.startsWith("/api/notes/")) {
+        requireAuth(request, env);
+        const cfg = config(env);
+        const rest = decodeURIComponent(url.pathname.slice("/api/notes/".length));
+        const [category = "", slug = ""] = rest.split("/");
+
+        if (request.method === "GET") {
+          const note = await getNote(cfg, env, category, slug);
+          return json({ ok: true, note }, 200, cors);
+        }
+        if (request.method === "PUT") {
+          const { note } = await request.json();
+          const updated = await updateNote(cfg, env, category, slug, note || {});
+          return json({ ok: true, note: updated }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          await deleteNote(cfg, env, category, slug);
+          return json({ ok: true }, 200, cors);
+        }
+      }
+
       return json({ error: "Not found" }, 404, cors);
     } catch (e) {
       const status = e && e.status ? e.status : 500;
@@ -197,6 +337,8 @@ function config(env) {
     sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
     thoughtsPath: env.THOUGHTS_PATH || DEFAULTS.THOUGHTS_PATH,
     guestbookPath: env.GUESTBOOK_PATH || DEFAULTS.GUESTBOOK_PATH,
+    lifePath: env.LIFE_PATH || DEFAULTS.LIFE_PATH,
+    techDir: env.TECH_DIR || DEFAULTS.TECH_DIR,
   };
 }
 
@@ -222,27 +364,13 @@ function normalizeParticles(p) {
   };
 }
 
-const TREE_STYLES = ["ink", "vine", "crown", "minimal", "cherry"];
-const TREE_ICONS = ["dot", "leaf", "bud", "ring"];
-const TREE_STROKES = ["ink", "accent"];
-
-function normalizeTree(t) {
-  t = t || {};
-  return {
-    style: TREE_STYLES.includes(t.style) ? t.style : "ink",
-    icon: TREE_ICONS.includes(t.icon) ? t.icon : "dot",
-    stroke: TREE_STROKES.includes(t.stroke) ? t.stroke : "ink",
-    seed: Math.round(clampNum(t.seed, 1, 9999, 7)),
-  };
-}
-
 function normalizeConfig(data) {
   const d = data || {};
   return {
     defaultPalette: d.defaultPalette || "midnight",
     defaultMode: d.defaultMode === "light" ? "light" : "dark",
+    defaultFont: FONTS.includes(d.defaultFont) ? d.defaultFont : "sans",
     particles: normalizeParticles(d.particles),
-    tree: normalizeTree(d.tree),
   };
 }
 
@@ -363,6 +491,23 @@ function normalizeThought(p) {
     body: String(p.body || "").trim(),
     source: p.source === "x" ? "x" : "admin",
     xUrl: String(p.xUrl || "").trim(),
+  };
+}
+
+// ── life (朋友圈式生活记录) ─────────────────────────────────
+function asLifePosts(data) {
+  return data && Array.isArray(data.posts) ? data.posts : [];
+}
+
+function normalizeLifePost(p) {
+  const images = Array.isArray(p.images)
+    ? p.images.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 9)
+    : [];
+  return {
+    id: String(p.id || "").trim() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+    date: String(p.date || "").trim() || new Date().toISOString(),
+    text: String(p.text || "").trim(),
+    images,
   };
 }
 
@@ -547,6 +692,214 @@ async function ghPut(cfg, env, path, data, sha, message) {
     throw httpErr(502, "提交 GitHub 失败 " + res.status + " " + t.slice(0, 160));
   }
   return res.json();
+}
+
+// ── GitHub raw-file / directory I/O (for content/tech/*.md) ─
+async function ghGetText(cfg, env, path) {
+  if (!env.GITHUB_TOKEN) throw httpErr(500, "服务端未设置 GITHUB_TOKEN");
+  const res = await fetch(ghUrl(cfg, path) + "?ref=" + encodeURIComponent(cfg.branch), {
+    headers: ghHeaders(env),
+  });
+  if (res.status === 404) return { text: null, sha: null }; // file not created yet
+  if (!res.ok) throw httpErr(502, "读取 GitHub 文件失败 " + res.status);
+  const file = await res.json();
+  return { text: b64decode(file.content), sha: file.sha };
+}
+
+async function ghPutText(cfg, env, path, text, sha, message) {
+  const body = { message, content: b64encode(text), branch: cfg.branch };
+  if (sha) body.sha = sha; // omit to create a new file
+  const res = await fetch(ghUrl(cfg, path), {
+    method: "PUT",
+    headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw httpErr(502, "提交 GitHub 失败 " + res.status + " " + t.slice(0, 160));
+  }
+  return res.json();
+}
+
+async function ghDeleteFile(cfg, env, path, sha, message) {
+  const res = await fetch(ghUrl(cfg, path), {
+    method: "DELETE",
+    headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+    body: JSON.stringify({ message, sha, branch: cfg.branch }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw httpErr(502, "删除 GitHub 文件失败 " + res.status + " " + t.slice(0, 160));
+  }
+  return res.json();
+}
+
+async function ghListDir(cfg, env, path) {
+  if (!env.GITHUB_TOKEN) throw httpErr(500, "服务端未设置 GITHUB_TOKEN");
+  const res = await fetch(ghUrl(cfg, path) + "?ref=" + encodeURIComponent(cfg.branch), {
+    headers: ghHeaders(env),
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) throw httpErr(502, "读取 GitHub 目录失败 " + res.status);
+  const list = await res.json();
+  return Array.isArray(list) ? list : [];
+}
+
+// ── tech notes (content/tech/*.md) ──────────────────────────
+function validSlug(slug) {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(String(slug || "")) && slug !== "_index";
+}
+
+function yamlQuote(s) {
+  return '"' + String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+}
+
+function parseNote(raw, slug) {
+  const m = String(raw || "").match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!m) return { slug, title: slug, date: "", draft: false, body: String(raw || "").trim() };
+  const fm = {};
+  m[1].split(/\r?\n/).forEach((line) => {
+    const mm = line.match(/^(\w+):\s*(.*)$/);
+    if (!mm) return;
+    let val = mm[2].trim();
+    if (/^".*"$/.test(val)) val = val.slice(1, -1).replace(/\\(["\\])/g, "$1");
+    fm[mm[1]] = val;
+  });
+  return {
+    slug,
+    title: fm.title || slug,
+    date: fm.date || "",
+    draft: fm.draft === "true",
+    body: m[2].replace(/^\n+/, "").trim(),
+  };
+}
+
+function buildNote(n) {
+  const title = String((n && n.title) || "").trim();
+  const date = String((n && n.date) || "").trim() || new Date().toISOString().slice(0, 10);
+  const draft = !!(n && n.draft);
+  const body = String((n && n.body) || "").trim();
+  return `---\ntitle: ${yamlQuote(title)}\ndate: ${date}\ndraft: ${draft}\n---\n\n${body}\n`;
+}
+
+function parseCategory(raw, slug) {
+  const m = String(raw || "").match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  let title = slug;
+  if (m) {
+    const t = m[1].match(/^title:\s*(.*)$/m);
+    if (t) {
+      let val = t[1].trim();
+      if (/^".*"$/.test(val)) val = val.slice(1, -1).replace(/\\(["\\])/g, "$1");
+      title = val || slug;
+    }
+  }
+  return { slug, title };
+}
+
+function buildCategory(title) {
+  return `---\ntitle: ${yamlQuote(String(title || "").trim())}\n---\n`;
+}
+
+function categoryIndexPath(cfg, slug) {
+  return `${cfg.techDir}/${slug}/_index.md`;
+}
+
+async function listCategories(cfg, env) {
+  const entries = await ghListDir(cfg, env, cfg.techDir);
+  const dirs = entries.filter((e) => e.type === "dir");
+  const categories = await Promise.all(
+    dirs.map(async (d) => {
+      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${d.name}/_index.md`);
+      return parseCategory(text, d.name);
+    })
+  );
+  categories.sort((a, b) => a.title.localeCompare(b.title, "zh"));
+  return categories;
+}
+
+async function createCategory(cfg, env, category) {
+  const slug = String((category && category.slug) || "").trim().toLowerCase();
+  if (!validSlug(slug)) throw httpErr(400, "路径只能包含小写字母、数字和连字符");
+  const title = String((category && category.title) || "").trim();
+  if (!title) throw httpErr(400, "分类名称不能为空");
+  const path = categoryIndexPath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (existing.sha) throw httpErr(400, "该分类已存在");
+  const content = buildCategory(title);
+  await ghPutText(cfg, env, path, content, null, "Add tech category: " + title);
+  return { slug, title };
+}
+
+async function deleteCategory(cfg, env, slug) {
+  if (!validSlug(slug)) throw httpErr(400, "非法路径");
+  const entries = await ghListDir(cfg, env, `${cfg.techDir}/${slug}`);
+  const hasNotes = entries.some((e) => e.type === "file" && /\.md$/.test(e.name) && e.name !== "_index.md");
+  if (hasNotes) throw httpErr(400, "该分类下还有笔记，请先删除笔记再删除分类");
+  const path = categoryIndexPath(cfg, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该分类");
+  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech category: " + slug);
+}
+
+function notePath(cfg, category, slug) {
+  return `${cfg.techDir}/${category}/${slug}.md`;
+}
+
+async function listNotes(cfg, env, category) {
+  if (!validSlug(category)) throw httpErr(400, "非法分类");
+  const files = await ghListDir(cfg, env, `${cfg.techDir}/${category}`);
+  const mdFiles = files.filter((f) => f.type === "file" && /\.md$/.test(f.name) && f.name !== "_index.md");
+  const notes = await Promise.all(
+    mdFiles.map(async (f) => {
+      const slug = f.name.replace(/\.md$/, "");
+      const { text } = await ghGetText(cfg, env, `${cfg.techDir}/${category}/${f.name}`);
+      const n = parseNote(text, slug);
+      return { slug: n.slug, title: n.title, date: n.date, draft: n.draft };
+    })
+  );
+  notes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return notes;
+}
+
+async function getNote(cfg, env, category, slug) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
+  const { text } = await ghGetText(cfg, env, notePath(cfg, category, slug));
+  if (text == null) throw httpErr(404, "未找到该篇文章");
+  return parseNote(text, slug);
+}
+
+async function createNote(cfg, env, category, note) {
+  if (!validSlug(category)) throw httpErr(400, "请先选择或创建一个分类");
+  const slug = String(note.slug || "").trim().toLowerCase();
+  if (!validSlug(slug)) throw httpErr(400, "路径只能包含小写字母、数字和连字符");
+  if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
+  const catIndex = await ghGetText(cfg, env, categoryIndexPath(cfg, category));
+  if (!catIndex.sha) throw httpErr(400, "分类不存在");
+  const path = notePath(cfg, category, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (existing.sha) throw httpErr(400, "该路径已存在，换一个 slug");
+  const content = buildNote(note);
+  await ghPutText(cfg, env, path, content, null, "Add tech note: " + category + "/" + note.title);
+  return parseNote(content, slug);
+}
+
+async function updateNote(cfg, env, category, slug, note) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
+  if (!String(note.title || "").trim()) throw httpErr(400, "标题不能为空");
+  const path = notePath(cfg, category, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该篇文章");
+  const content = buildNote(note);
+  await ghPutText(cfg, env, path, content, existing.sha, "Update tech note: " + category + "/" + note.title);
+  return parseNote(content, slug);
+}
+
+async function deleteNote(cfg, env, category, slug) {
+  if (!validSlug(category) || !validSlug(slug)) throw httpErr(400, "非法路径");
+  const path = notePath(cfg, category, slug);
+  const existing = await ghGetText(cfg, env, path);
+  if (!existing.sha) throw httpErr(404, "未找到该篇文章");
+  await ghDeleteFile(cfg, env, path, existing.sha, "Remove tech note: " + category + "/" + slug);
 }
 
 // ── unicode-safe base64 ─────────────────────────────────────

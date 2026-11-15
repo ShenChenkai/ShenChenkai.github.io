@@ -37,6 +37,31 @@
     return data;
   }
 
+  // ── sidebar section switching ─────────────────────────────
+  const SECTIONS = ["albums", "thoughts", "life", "notes", "theme", "particles"];
+
+  function selectSection(name) {
+    SECTIONS.forEach((s) => {
+      $("panel-" + s).hidden = s !== name;
+      $("nav-" + s).classList.toggle("active", s === name);
+    });
+  }
+
+  SECTIONS.forEach((s) => {
+    $("nav-" + s).addEventListener("click", () => selectSection(s));
+  });
+
+  // ── login / dashboard ─────────────────────────────────────
+  function showLogin() {
+    $("admin-shell").hidden = true;
+    $("admin-login").hidden = false;
+  }
+
+  function showDashboard() {
+    $("admin-login").hidden = true;
+    $("admin-shell").hidden = false;
+  }
+
   // ── connect ───────────────────────────────────────────────
   async function connect() {
     try {
@@ -46,21 +71,28 @@
       sessionStorage.setItem(PWD_KEY, password());
       $("conn-status").textContent = "✅ 已连接";
       $("conn-status").classList.add("ok");
-      $("box-add").hidden = false;
-      $("box-thoughts").hidden = false;
-      $("box-theme").hidden = false;
-      $("box-particles").hidden = false;
-      $("box-tree").hidden = false;
-      $("box-list").hidden = false;
+      showDashboard();
+      selectSection("albums");
       log("连接成功。");
       loadConfig();
       reload();
       reloadThoughts();
+      reloadLife();
+      loadCategories();
     } catch (e) {
       $("conn-status").textContent = "❌ " + e.message;
       $("conn-status").classList.remove("ok");
       log(e.message, "error");
     }
+  }
+
+  function disconnect() {
+    sessionStorage.removeItem(PWD_KEY);
+    $("admin-pwd").value = "";
+    $("conn-status").textContent = "未连接";
+    $("conn-status").classList.remove("ok");
+    logEl.textContent = "";
+    showLogin();
   }
 
   // ── resolve metadata from a music URL ─────────────────────
@@ -94,64 +126,18 @@
       const { config } = await api("/api/config", "GET");
       $("t-palette").value = config.defaultPalette;
       $("t-mode").value = config.defaultMode;
+      $("t-font").value = config.defaultFont || "sans";
       updateThemePreview();
-      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+      updateFontPreview();
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode + " · " + $("t-font").value;
 
       const p = config.particles || {};
       const defs = { gap: 16, dotOpacity: 0.28, jitter: 1, wavePeriod: 8, waveAngle: 72, waveOpacity: 0.6 };
       PKEYS.forEach((k) => { $("p-" + k).value = p[k] != null ? p[k] : defs[k]; });
       applyParticlePreview();
       startParticlePreview();
-
-      const tr = config.tree || {};
-      $("tr-style").value = tr.style || "ink";
-      $("tr-icon").value = tr.icon || "dot";
-      $("tr-stroke").value = tr.stroke || "ink";
-      $("tr-seed").value = tr.seed || 7;
-      renderTreePreview();
     } catch (e) {
       log("读取站点配置失败：" + e.message, "error");
-    }
-  }
-
-  // ── thought tree ──────────────────────────────────────────
-  function gatherTree() {
-    return {
-      style: $("tr-style").value,
-      icon: $("tr-icon").value,
-      stroke: $("tr-stroke").value,
-      seed: Math.max(1, Math.min(9999, Math.round(Number($("tr-seed").value) || 7))),
-    };
-  }
-
-  function renderTreePreview() {
-    const spec = $("tree-preview-spec");
-    const t = gatherTree();
-    spec.dataset.style = t.style;
-    spec.dataset.icon = t.icon;
-    spec.dataset.stroke = t.stroke;
-    spec.dataset.seed = t.seed;
-    spec.querySelector(".tree-svg").classList.toggle("rough", t.style === "ink");
-    $("cur-tree").textContent = t.style + " · " + t.icon + " · " + t.stroke;
-    if (window.ThoughtTree) window.ThoughtTree.mount(spec);
-  }
-
-  function reseedTree() {
-    $("tr-seed").value = 1 + Math.floor(Math.random() * 9999);
-    renderTreePreview();
-  }
-
-  async function saveTree() {
-    try {
-      log("保存想法树…");
-      await api("/api/config", "POST", {
-        defaultPalette: $("t-palette").value,
-        defaultMode: $("t-mode").value,
-        tree: gatherTree(),
-      });
-      log("✅ 想法树已保存，约 1 分钟后上线。");
-    } catch (e) {
-      log("保存失败：" + e.message, "error");
     }
   }
 
@@ -213,13 +199,18 @@
     box.setAttribute("data-theme", $("t-mode").value);
   }
 
+  function updateFontPreview() {
+    $("font-preview").setAttribute("data-font", $("t-font").value);
+  }
+
   async function saveTheme() {
     const defaultPalette = $("t-palette").value;
     const defaultMode = $("t-mode").value;
+    const defaultFont = $("t-font").value;
     try {
-      log("保存默认主题：" + defaultPalette + " / " + defaultMode);
-      const { config } = await api("/api/config", "POST", { defaultPalette, defaultMode });
-      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode;
+      log("保存默认外观：" + defaultPalette + " / " + defaultMode + " / " + defaultFont);
+      const { config } = await api("/api/config", "POST", { defaultPalette, defaultMode, defaultFont });
+      $("cur-theme").textContent = config.defaultPalette + " · " + config.defaultMode + " · " + config.defaultFont;
       log("✅ 已保存，约 1 分钟后上线。");
     } catch (e) {
       log("保存失败：" + e.message, "error");
@@ -371,7 +362,367 @@
     });
   }
 
+  // ── life (朋友圈式生活记录) ────────────────────────────────
+  let lifeImages = []; // uploaded photo URLs for the post being composed
+  let editingLifeId = null; // non-null when editing an existing post
+
+  // Downscale + re-encode to JPEG in the browser so big phone photos upload fast.
+  function compressImage(file, maxEdge = 1600, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (Math.max(w, h) > maxEdge) { const s = maxEdge / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("压缩失败"))), "image/jpeg", quality);
+      };
+      img.onerror = () => reject(new Error("图片读取失败"));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function uploadImage(blob) {
+    const base = workerUrl();
+    if (!base) throw new Error("请先填写 Worker 地址");
+    const res = await fetch(base + "/api/life-upload", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + password(), "Content-Type": "image/jpeg" },
+      body: blob,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    return data.url;
+  }
+
+  async function handleLifeFiles(ev) {
+    const files = [...(ev.target.files || [])];
+    ev.target.value = "";
+    for (const file of files) {
+      if (lifeImages.length >= 9) { log("最多 9 张。", "error"); break; }
+      try {
+        log("压缩上传：" + file.name);
+        const blob = await compressImage(file);
+        const url = await uploadImage(blob);
+        lifeImages.push(url);
+        renderLifeThumbs();
+        log("✅ 已上传（" + Math.round(blob.size / 1024) + "KB）");
+      } catch (e) {
+        log("上传失败：" + e.message, "error");
+      }
+    }
+  }
+
+  function renderLifeThumbs() {
+    const box = $("l-thumbs");
+    box.innerHTML = "";
+    lifeImages.forEach((url, i) => {
+      const div = document.createElement("div");
+      div.className = "life-thumb";
+      const img = document.createElement("img");
+      img.src = url;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "life-thumb-del";
+      del.textContent = "×";
+      del.addEventListener("click", () => { lifeImages.splice(i, 1); renderLifeThumbs(); });
+      div.appendChild(img);
+      div.appendChild(del);
+      box.appendChild(div);
+    });
+  }
+
+  async function saveLife() {
+    const text = ($("l-text").value || "").trim();
+    const date = ($("l-date").value || "").trim();
+    if (!text && lifeImages.length === 0) { log("文字和照片至少要有一样。", "error"); return; }
+    try {
+      let posts;
+      if (editingLifeId) {
+        log("更新生活记录…");
+        ({ posts } = await api("/api/life", "PUT", { post: { id: editingLifeId, text, date, images: lifeImages } }));
+        log("✅ 已更新，约 1 分钟后上线。");
+      } else {
+        log("发布生活记录…");
+        ({ posts } = await api("/api/life", "POST", { post: { text, date, images: lifeImages } }));
+        log("✅ 已发布，约 1 分钟后上线。");
+      }
+      resetLifeForm();
+      renderLife(posts);
+    } catch (e) {
+      log((editingLifeId ? "更新失败：" : "发布失败：") + e.message, "error");
+    }
+  }
+
+  function resetLifeForm() {
+    editingLifeId = null;
+    $("l-text").value = "";
+    $("l-date").value = todayStr();
+    lifeImages = [];
+    renderLifeThumbs();
+    $("btn-l-add").textContent = "发布";
+    $("btn-l-cancel").hidden = true;
+  }
+
+  function editLifeItem(p) {
+    editingLifeId = p.id;
+    $("l-text").value = p.text || "";
+    $("l-date").value = (p.date || "").slice(0, 10) || todayStr();
+    lifeImages = [...(p.images || [])];
+    renderLifeThumbs();
+    $("btn-l-add").textContent = "保存修改";
+    $("btn-l-cancel").hidden = false;
+    $("panel-life").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function reloadLife() {
+    try {
+      const { posts } = await api("/api/life", "GET");
+      renderLife(posts);
+      log("已加载 " + posts.length + " 条生活记录。");
+    } catch (e) {
+      log("加载生活记录失败：" + e.message, "error");
+    }
+  }
+
+  async function deleteLifeItem(id, label) {
+    if (!confirm("删除「" + label + "」？")) return;
+    try {
+      const { posts } = await api("/api/life", "DELETE", { id });
+      log("已删除。");
+      if (editingLifeId === id) resetLifeForm();
+      renderLife(posts);
+    } catch (e) {
+      log("删除失败：" + e.message, "error");
+    }
+  }
+
+  function renderLife(posts) {
+    const list = $("life-list");
+    list.innerHTML = "";
+    if (!posts || !posts.length) { list.innerHTML = '<li class="admin-muted">（空）</li>'; return; }
+    posts.forEach((p) => {
+      const li = document.createElement("li");
+      li.className = "admin-list-item";
+      const date = (p.date || "").slice(0, 10);
+      const n = (p.images || []).length;
+      const snippet = (p.text || "").replace(/\s+/g, " ").slice(0, 30) || "(无文字)";
+      const meta = document.createElement("span");
+      meta.textContent = "📷×" + n + "　" + snippet + "　" + date;
+      const actions = document.createElement("span");
+      actions.className = "admin-list-actions";
+      const edit = document.createElement("button");
+      edit.className = "admin-btn ghost small";
+      edit.textContent = "编辑";
+      edit.addEventListener("click", () => editLifeItem(p));
+      const del = document.createElement("button");
+      del.className = "admin-btn ghost small";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteLifeItem(p.id, snippet));
+      actions.appendChild(edit);
+      actions.appendChild(del);
+      li.appendChild(meta);
+      li.appendChild(actions);
+      list.appendChild(li);
+    });
+  }
+
+  // ── tech categories ───────────────────────────────────────
+  let categories = [];
+
+  function currentCategory() {
+    const v = $("n-cat-select").value;
+    return v === "__new__" ? "" : v;
+  }
+
+  function toggleCatNewRow() {
+    $("n-cat-new-row").hidden = $("n-cat-select").value !== "__new__";
+  }
+
+  function renderCategorySelect(selectSlug) {
+    const sel = $("n-cat-select");
+    sel.innerHTML = "";
+    categories.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c.slug;
+      opt.textContent = c.title;
+      sel.appendChild(opt);
+    });
+    const newOpt = document.createElement("option");
+    newOpt.value = "__new__";
+    newOpt.textContent = "+ 新建分类…";
+    sel.appendChild(newOpt);
+    if (selectSlug && categories.some((c) => c.slug === selectSlug)) sel.value = selectSlug;
+    else if (categories.length) sel.value = categories[0].slug;
+    onCategoryChange();
+  }
+
+  async function loadCategories(selectSlug) {
+    try {
+      const { categories: cats } = await api("/api/categories", "GET");
+      categories = cats;
+      renderCategorySelect(selectSlug);
+    } catch (e) {
+      log("加载分类失败：" + e.message, "error");
+    }
+  }
+
+  async function createCategory() {
+    const title = ($("n-cat-new-title").value || "").trim();
+    const slug = ($("n-cat-new-slug").value || "").trim().toLowerCase();
+    if (!title) { log("分类名称不能为空。", "error"); return; }
+    if (!SLUG_RE.test(slug)) { log("分类路径只能包含小写字母、数字和连字符。", "error"); return; }
+    try {
+      log("创建分类：" + title);
+      await api("/api/categories", "POST", { category: { title, slug } });
+      log("✅ 分类已创建。");
+      $("n-cat-new-title").value = "";
+      $("n-cat-new-slug").value = "";
+      await loadCategories(slug);
+    } catch (e) {
+      log("创建分类失败：" + e.message, "error");
+    }
+  }
+
+  function onCategoryChange() {
+    toggleCatNewRow();
+    resetNoteForm();
+    if (currentCategory()) reloadNotes();
+    else $("note-list").innerHTML = "";
+  }
+
+  // ── tech notes ────────────────────────────────────────────
+  let editingSlug = null;
+  const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function resetNoteForm() {
+    editingSlug = null;
+    $("n-title").value = "";
+    $("n-slug").value = "";
+    $("n-slug").disabled = false;
+    $("n-date").value = todayStr();
+    $("n-draft").checked = false;
+    $("n-body").value = "";
+    $("btn-n-save").textContent = "发布笔记";
+    $("btn-n-cancel").hidden = true;
+  }
+
+  function gatherNote() {
+    return {
+      category: currentCategory(),
+      title: ($("n-title").value || "").trim(),
+      slug: ($("n-slug").value || "").trim().toLowerCase(),
+      date: ($("n-date").value || "").trim(),
+      draft: $("n-draft").checked,
+      body: ($("n-body").value || "").trim(),
+    };
+  }
+
+  async function saveNote() {
+    const note = gatherNote();
+    if (!note.category) { log("请先选择或创建一个分类。", "error"); return; }
+    if (!note.title) { log("标题必填。", "error"); return; }
+    if (!note.body) { log("正文必填。", "error"); return; }
+    if (!editingSlug && !SLUG_RE.test(note.slug)) {
+      log("路径只能包含小写字母、数字和连字符。", "error");
+      return;
+    }
+    try {
+      if (editingSlug) {
+        log("更新笔记：" + note.title);
+        await api("/api/notes/" + encodeURIComponent(note.category) + "/" + encodeURIComponent(editingSlug), "PUT", { note });
+        log("✅ 已更新，约 1 分钟后上线。");
+      } else {
+        log("发布笔记：" + note.title);
+        await api("/api/notes", "POST", { note });
+        log("✅ 已发布，约 1 分钟后上线。");
+      }
+      resetNoteForm();
+      reloadNotes();
+    } catch (e) {
+      log((editingSlug ? "更新失败：" : "发布失败：") + e.message, "error");
+    }
+  }
+
+  async function reloadNotes() {
+    const cat = currentCategory();
+    if (!cat) { $("note-list").innerHTML = ""; return; }
+    try {
+      const { notes } = await api("/api/notes?category=" + encodeURIComponent(cat), "GET");
+      renderNotes(notes);
+      log("已加载 " + notes.length + " 篇笔记。");
+    } catch (e) {
+      log("加载笔记失败：" + e.message, "error");
+    }
+  }
+
+  async function editNote(slug) {
+    const cat = currentCategory();
+    try {
+      const { note } = await api("/api/notes/" + encodeURIComponent(cat) + "/" + encodeURIComponent(slug), "GET");
+      editingSlug = slug;
+      $("n-title").value = note.title || "";
+      $("n-slug").value = note.slug;
+      $("n-slug").disabled = true;
+      $("n-date").value = note.date || todayStr();
+      $("n-draft").checked = !!note.draft;
+      $("n-body").value = note.body || "";
+      $("btn-n-save").textContent = "保存修改";
+      $("btn-n-cancel").hidden = false;
+      $("panel-notes").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      log("读取笔记失败：" + e.message, "error");
+    }
+  }
+
+  async function deleteNoteItem(slug, title) {
+    if (!confirm("删除「" + title + "」？")) return;
+    const cat = currentCategory();
+    try {
+      await api("/api/notes/" + encodeURIComponent(cat) + "/" + encodeURIComponent(slug), "DELETE");
+      log("已删除：" + title);
+      if (editingSlug === slug) resetNoteForm();
+      reloadNotes();
+    } catch (e) {
+      log("删除失败：" + e.message, "error");
+    }
+  }
+
+  function renderNotes(notes) {
+    const list = $("note-list");
+    list.innerHTML = "";
+    if (!notes || !notes.length) { list.innerHTML = '<li class="admin-muted">（空）</li>'; return; }
+    notes.forEach((n) => {
+      const li = document.createElement("li");
+      li.className = "admin-list-item";
+      const meta = document.createElement("span");
+      meta.textContent = (n.draft ? "📝 [草稿] " : "") + n.title + "　" + (n.date || "");
+      const actions = document.createElement("span");
+      actions.className = "admin-list-actions";
+      const edit = document.createElement("button");
+      edit.className = "admin-btn ghost small";
+      edit.textContent = "编辑";
+      edit.addEventListener("click", () => editNote(n.slug));
+      const del = document.createElement("button");
+      del.className = "admin-btn ghost small";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteNoteItem(n.slug, n.title));
+      actions.appendChild(edit);
+      actions.appendChild(del);
+      li.appendChild(meta);
+      li.appendChild(actions);
+      list.appendChild(li);
+    });
+  }
+
   $("btn-connect").addEventListener("click", connect);
+  $("btn-disconnect").addEventListener("click", disconnect);
   $("btn-resolve").addEventListener("click", resolve);
   $("btn-add").addEventListener("click", addAlbum);
   $("btn-reload").addEventListener("click", reload);
@@ -379,14 +730,21 @@
   $("btn-save-theme").addEventListener("click", saveTheme);
   $("t-palette").addEventListener("change", updateThemePreview);
   $("t-mode").addEventListener("change", updateThemePreview);
+  $("t-font").addEventListener("change", updateFontPreview);
   $("btn-save-particles").addEventListener("click", saveParticles);
   PKEYS.forEach((k) => $("p-" + k).addEventListener("input", applyParticlePreview));
-  ["tr-style", "tr-icon", "tr-stroke"].forEach((id) => $(id).addEventListener("change", renderTreePreview));
-  $("tr-seed").addEventListener("input", renderTreePreview);
-  $("btn-tr-reseed").addEventListener("click", reseedTree);
-  $("btn-save-tree").addEventListener("click", saveTree);
   $("th-type").addEventListener("change", toggleThoughtTitle);
   $("btn-th-fetch").addEventListener("click", fetchTweetText);
   $("btn-th-add").addEventListener("click", addThought);
   $("btn-th-reload").addEventListener("click", reloadThoughts);
+  $("btn-l-add").addEventListener("click", saveLife);
+  $("btn-l-cancel").addEventListener("click", resetLifeForm);
+  $("btn-l-reload").addEventListener("click", reloadLife);
+  $("l-files").addEventListener("change", handleLifeFiles);
+  resetLifeForm();
+  $("n-cat-select").addEventListener("change", onCategoryChange);
+  $("btn-cat-create").addEventListener("click", createCategory);
+  $("btn-n-save").addEventListener("click", saveNote);
+  $("btn-n-cancel").addEventListener("click", resetNoteForm);
+  $("btn-n-reload").addEventListener("click", reloadNotes);
 })();

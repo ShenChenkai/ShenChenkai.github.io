@@ -1,223 +1,278 @@
 {{ define "main" }}
 <div class="admin-page">
-  <h1 class="page-title">专辑管理后台</h1>
-  <p class="subtitle">输入音乐链接自动识别，密码登录，提交后约 1 分钟自动重建上线。</p>
-
-  <!-- Connect -->
-  <section class="admin-box" id="box-connect">
-    <h2>连接</h2>
-    <label class="admin-field">
-      <span>Worker 地址</span>
-      <input type="url" id="worker-url" value="https://music-admin.shenck.workers.dev" placeholder="https://music-admin.xxx.workers.dev" autocomplete="off" />
-    </label>
-    <label class="admin-field">
-      <span>管理员密码</span>
-      <input type="password" id="admin-pwd" placeholder="你设定的密码" autocomplete="current-password" />
-    </label>
-    <div class="admin-row">
-      <button class="admin-btn" id="btn-connect" type="button">连接</button>
-      <span class="admin-status" id="conn-status">未连接</span>
-    </div>
-  </section>
-
-  <!-- Add (hidden until connected) -->
-  <section class="admin-box" id="box-add" hidden>
-    <h2>新增专辑</h2>
-    <label class="admin-field">
-      <span>音乐链接（Apple Music / QQ 音乐）</span>
-      <div class="admin-inline">
-        <input type="url" id="f-url" placeholder="粘贴歌曲分享链接…" />
-        <button class="admin-btn" id="btn-resolve" type="button">识别</button>
-      </div>
-    </label>
-
-    <div class="admin-detect">
-      <div class="admin-cover" id="cover-preview" aria-hidden="true"></div>
-      <div class="admin-detect-fields">
-        <label class="admin-field"><span>标题 *</span><input type="text" id="f-title" /></label>
-        <label class="admin-field"><span>艺人</span><input type="text" id="f-artist" /></label>
-        <label class="admin-field"><span>封面 URL</span><input type="url" id="f-cover" /></label>
-        <label class="admin-field"><span>跳转链接</span><input type="url" id="f-link" /></label>
+  <!-- Login (standalone, shown until connected) -->
+  <div class="admin-login" id="admin-login">
+    <div class="admin-login-card">
+      <h1 class="page-title">后台管理</h1>
+      <p class="subtitle">密码登录后可管理专辑、想法、Tech 笔记与站点设置，提交后约 1 分钟自动重建上线。</p>
+      <label class="admin-field">
+        <span>Worker 地址</span>
+        <input type="url" id="worker-url" value="https://music-admin.shenck.workers.dev" placeholder="https://music-admin.xxx.workers.dev" autocomplete="off" />
+      </label>
+      <label class="admin-field">
+        <span>管理员密码</span>
+        <input type="password" id="admin-pwd" placeholder="你设定的密码" autocomplete="current-password" />
+      </label>
+      <div class="admin-row">
+        <button class="admin-btn" id="btn-connect" type="button">连接</button>
+        <span class="admin-status" id="conn-status">未连接</span>
       </div>
     </div>
-    <button class="admin-btn" id="btn-add" type="button">添加并发布</button>
-  </section>
+  </div>
 
-  <!-- Thoughts -->
-  <section class="admin-box" id="box-thoughts" hidden>
-    <h2>想法 / Thoughts</h2>
-    <p class="admin-muted">写长想法或短碎念；也可粘贴 X 帖子链接抓取正文。提交后约 1 分钟上线。</p>
-    <div class="admin-row">
-      <label class="admin-field" style="width:150px">
-        <span>类型</span>
-        <select id="th-type">
-          <option value="short">短想法</option>
-          <option value="long">长想法</option>
-        </select>
-      </label>
-      <label class="admin-field" id="th-title-field" style="flex:1" hidden>
-        <span>标题</span>
-        <input type="text" id="th-title" placeholder="长想法的标题…" />
-      </label>
-    </div>
-    <label class="admin-field">
-      <span>从 X 抓取正文（可选，回复多数情况下抓不到）</span>
-      <div class="admin-inline">
-        <input type="url" id="th-xurl" placeholder="粘贴 X 帖子链接…" />
-        <button class="admin-btn" id="btn-th-fetch" type="button">抓取</button>
-      </div>
-    </label>
-    <label class="admin-field">
-      <span>正文（支持 Markdown）*</span>
-      <textarea id="th-body" rows="5" placeholder="写点什么…"></textarea>
-    </label>
-    <button class="admin-btn" id="btn-th-add" type="button">发布想法</button>
+  <!-- Dashboard (shown after connecting) -->
+  <div class="admin-shell" id="admin-shell" hidden>
+    <nav class="admin-sidebar">
+      <div class="admin-sidebar-title">后台管理</div>
+      <button class="admin-nav-item" id="nav-albums" data-section="albums" type="button">专辑</button>
+      <button class="admin-nav-item" id="nav-thoughts" data-section="thoughts" type="button">想法</button>
+      <button class="admin-nav-item" id="nav-life" data-section="life" type="button">生活</button>
+      <button class="admin-nav-item" id="nav-notes" data-section="notes" type="button">Tech 笔记</button>
+      <button class="admin-nav-item" id="nav-theme" data-section="theme" type="button">外观</button>
+      <button class="admin-nav-item" id="nav-particles" data-section="particles" type="button">粒子背景</button>
+      <button class="admin-nav-item admin-nav-item--exit" id="btn-disconnect" type="button">断开连接</button>
+    </nav>
 
-    <div class="admin-row admin-row--head" style="margin-top:1.8rem">
-      <h2 style="margin:0;font-size:1rem">现有想法</h2>
-      <button class="admin-btn ghost" id="btn-th-reload" type="button">刷新</button>
-    </div>
-    <ol class="admin-list" id="thought-list"></ol>
-  </section>
+    <div class="admin-content">
+      <!-- Albums (add + existing list) -->
+      <section class="admin-box" id="panel-albums" hidden>
+        <h2>新增专辑</h2>
+        <label class="admin-field">
+          <span>音乐链接（Apple Music / QQ 音乐）</span>
+          <div class="admin-inline">
+            <input type="url" id="f-url" placeholder="粘贴歌曲分享链接…" />
+            <button class="admin-btn" id="btn-resolve" type="button">识别</button>
+          </div>
+        </label>
 
-  <!-- Theme -->
-  {{ $palettes := slice
-    (dict "id" "midnight" "name" "深海·琥珀")
-    (dict "id" "stone" "name" "暖炭·米白")
-    (dict "id" "dusk" "name" "暮色·薰衣")
-    (dict "id" "forest" "name" "林间·薄荷")
-    (dict "id" "ink" "name" "墨白·纯粹")
-    (dict "id" "claude" "name" "暖土·赤陶")
-    (dict "id" "linear" "name" "黑曜·靛蓝")
-    (dict "id" "vercel" "name" "纯黑·电蓝")
-    (dict "id" "raycast" "name" "炭黑·火焰")
-    (dict "id" "newjeans1" "name" "星紫")
-    (dict "id" "newjeans2" "name" "洋红")
-    (dict "id" "newjeans3" "name" "粉焰")
-    (dict "id" "newjeans4" "name" "橙赤")
-    (dict "id" "newjeans5" "name" "暖橘")
-    (dict "id" "newjeans6" "name" "阳黄")
-    (dict "id" "newjeans7" "name" "青柠")
-    (dict "id" "newjeans8" "name" "草绿")
-  }}
-  <section class="admin-box" id="box-theme" hidden>
-    <h2>站点默认主题色</h2>
-    <p class="admin-muted">访客第一次打开网站时看到的配色。当前：<strong id="cur-theme">—</strong></p>
-    <div class="admin-row">
-      <label class="admin-field" style="flex:1">
-        <span>配色</span>
-        <select id="t-palette">
-          {{ range $palettes }}<option value="{{ .id }}">{{ .name }}（{{ .id }}）</option>{{ end }}
-        </select>
-      </label>
-      <label class="admin-field" style="width:130px">
-        <span>明暗</span>
-        <select id="t-mode">
-          <option value="dark">深色</option>
-          <option value="light">浅色</option>
-        </select>
-      </label>
-    </div>
-    <div class="theme-preview" id="theme-preview" data-theme="dark" data-palette="midnight">
-      <span class="tp" style="background:var(--bg)"></span>
-      <span class="tp" style="background:var(--bg2)"></span>
-      <span class="tp" style="background:var(--border)"></span>
-      <span class="tp" style="background:var(--muted)"></span>
-      <span class="tp" style="background:var(--text)"></span>
-      <span class="tp" style="background:var(--accent)"></span>
-    </div>
-    <button class="admin-btn" id="btn-save-theme" type="button">保存默认</button>
-  </section>
-
-  <!-- Particles -->
-  <section class="admin-box" id="box-particles" hidden>
-    <h2>音乐墙粒子背景</h2>
-    <p class="admin-muted">下方为实时预览（颜色随当前配色）。</p>
-    <div class="particle-preview" id="particle-preview"><canvas id="particle-preview-canvas"></canvas></div>
-    <div class="particle-grid">
-      <label class="admin-field"><span>点间距 <b class="pval" id="v-gap"></b></span>
-        <input type="range" id="p-gap" min="8" max="48" step="1" /></label>
-      <label class="admin-field"><span>点亮度 <b class="pval" id="v-dotOpacity"></b></span>
-        <input type="range" id="p-dotOpacity" min="0" max="1" step="0.02" /></label>
-      <label class="admin-field"><span>震动强度 <b class="pval" id="v-jitter"></b></span>
-        <input type="range" id="p-jitter" min="0" max="4" step="0.1" /></label>
-      <label class="admin-field"><span>波浪周期 <b class="pval" id="v-wavePeriod"></b></span>
-        <input type="range" id="p-wavePeriod" min="2" max="40" step="1" /></label>
-      <label class="admin-field"><span>波浪角度 <b class="pval" id="v-waveAngle"></b></span>
-        <input type="range" id="p-waveAngle" min="0" max="180" step="1" /></label>
-      <label class="admin-field"><span>波浪亮度 <b class="pval" id="v-waveOpacity"></b></span>
-        <input type="range" id="p-waveOpacity" min="0" max="1" step="0.02" /></label>
-    </div>
-    <button class="admin-btn" id="btn-save-particles" type="button" style="margin-top:1.2rem">保存粒子设置</button>
-  </section>
-
-  <!-- Thought tree -->
-  <section class="admin-box" id="box-tree" hidden>
-    <h2>Thoughts 页 · 想法树</h2>
-    <p class="admin-muted">想法页顶部那棵树的画法。当前：<strong id="cur-tree">—</strong></p>
-    <div class="admin-row">
-      <label class="admin-field" style="flex:1"><span>画法</span>
-        <select id="tr-style">
-          <option value="ink">水墨枯枝</option>
-          <option value="vine">单线藤蔓</option>
-          <option value="crown">自然满冠</option>
-          <option value="minimal">极简芽枝</option>
-          <option value="cherry">樱花满树</option>
-        </select>
-      </label>
-      <label class="admin-field" style="flex:1"><span>枝梢</span>
-        <select id="tr-icon">
-          <option value="dot">墨点</option>
-          <option value="leaf">嫩芽</option>
-          <option value="bud">花苞</option>
-          <option value="ring">空心环</option>
-        </select>
-      </label>
-      <label class="admin-field" style="width:130px"><span>描边</span>
-        <select id="tr-stroke">
-          <option value="ink">墨色</option>
-          <option value="accent">主题色</option>
-        </select>
-      </label>
-    </div>
-    <div class="admin-row" style="align-items:flex-end">
-      <label class="admin-field" style="width:150px"><span>形状种子</span>
-        <input type="number" id="tr-seed" min="1" max="9999" step="1" />
-      </label>
-      <button class="admin-btn ghost" id="btn-tr-reseed" type="button">换一棵 ↻</button>
-    </div>
-    <div class="tree-preview" style="max-width:380px;margin:1.2rem auto 0">
-      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-        <defs>
-          <filter id="ink-rough" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="2" seed="7" result="n" />
-            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
-          </filter>
-        </defs>
-      </svg>
-      <figure class="spec" id="tree-preview-spec" data-anim="off" data-style="ink" data-icon="dot" data-stroke="ink" data-seed="7">
-        <div class="tree-stage">
-          <svg class="tree-svg rough" viewBox="0 0 440 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><g class="tree-ink"></g></svg>
-          <div class="tips"></div>
+        <div class="admin-detect">
+          <div class="admin-cover" id="cover-preview" aria-hidden="true"></div>
+          <div class="admin-detect-fields">
+            <label class="admin-field"><span>标题 *</span><input type="text" id="f-title" /></label>
+            <label class="admin-field"><span>艺人</span><input type="text" id="f-artist" /></label>
+            <label class="admin-field"><span>封面 URL</span><input type="url" id="f-cover" /></label>
+            <label class="admin-field"><span>跳转链接</span><input type="url" id="f-link" /></label>
+          </div>
         </div>
-      </figure>
-    </div>
-    <button class="admin-btn" id="btn-save-tree" type="button" style="margin-top:1.2rem">保存想法树</button>
-  </section>
+        <button class="admin-btn" id="btn-add" type="button">添加并发布</button>
 
-  <!-- List -->
-  <section class="admin-box" id="box-list" hidden>
-    <div class="admin-row admin-row--head">
-      <h2>现有专辑</h2>
-      <button class="admin-btn ghost" id="btn-reload" type="button">刷新</button>
-    </div>
-    <ol class="admin-list" id="album-list"></ol>
-  </section>
+        <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+          <h2 style="margin:0;font-size:1rem">现有专辑</h2>
+          <button class="admin-btn ghost" id="btn-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="album-list"></ol>
+      </section>
 
-  <pre class="admin-log" id="admin-log" aria-live="polite"></pre>
+      <!-- Thoughts -->
+      <section class="admin-box" id="panel-thoughts" hidden>
+        <h2>想法 / Thoughts</h2>
+        <p class="admin-muted">写长想法或短碎念；也可粘贴 X 帖子链接抓取正文。提交后约 1 分钟上线。</p>
+        <div class="admin-row">
+          <label class="admin-field" style="width:150px">
+            <span>类型</span>
+            <select id="th-type">
+              <option value="short">短想法</option>
+              <option value="long">长想法</option>
+            </select>
+          </label>
+          <label class="admin-field" id="th-title-field" style="flex:1" hidden>
+            <span>标题</span>
+            <input type="text" id="th-title" placeholder="长想法的标题…" />
+          </label>
+        </div>
+        <label class="admin-field">
+          <span>从 X 抓取正文（可选，回复多数情况下抓不到）</span>
+          <div class="admin-inline">
+            <input type="url" id="th-xurl" placeholder="粘贴 X 帖子链接…" />
+            <button class="admin-btn" id="btn-th-fetch" type="button">抓取</button>
+          </div>
+        </label>
+        <label class="admin-field">
+          <span>正文（支持 Markdown）*</span>
+          <textarea id="th-body" rows="5" placeholder="写点什么…"></textarea>
+        </label>
+        <button class="admin-btn" id="btn-th-add" type="button">发布想法</button>
+
+        <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+          <h2 style="margin:0;font-size:1rem">现有想法</h2>
+          <button class="admin-btn ghost" id="btn-th-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="thought-list"></ol>
+      </section>
+
+      <!-- Life -->
+      <section class="admin-box" id="panel-life" hidden>
+        <h2>生活 / Life</h2>
+        <p class="admin-muted">发一条生活记录：文字 + 照片（朋友圈式）。提交后约 1 分钟上线。</p>
+        <label class="admin-field">
+          <span>文字（支持 Markdown，可选）</span>
+          <textarea id="l-text" rows="3" placeholder="今天…"></textarea>
+        </label>
+        <label class="admin-field">
+          <span>照片（可多选，自动压缩后上传到 R2）</span>
+          <input type="file" id="l-files" accept="image/*" multiple />
+        </label>
+        <div class="life-thumbs" id="l-thumbs"></div>
+        <label class="admin-field" style="width:180px">
+          <span>日期</span>
+          <input type="date" id="l-date" />
+        </label>
+        <div class="admin-row">
+          <button class="admin-btn" id="btn-l-add" type="button">发布</button>
+          <button class="admin-btn ghost" id="btn-l-cancel" type="button" hidden>取消编辑</button>
+        </div>
+
+        <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+          <h2 style="margin:0;font-size:1rem">现有记录</h2>
+          <button class="admin-btn ghost" id="btn-l-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="life-list"></ol>
+      </section>
+
+      <!-- Tech notes -->
+      <section class="admin-box" id="panel-notes" hidden>
+        <h2>Tech 笔记</h2>
+        <p class="admin-muted">按技术主题分类管理 Markdown 笔记，无需手动 git 操作。提交后约 1 分钟上线。</p>
+
+        <label class="admin-field">
+          <span>分类</span>
+          <select id="n-cat-select"></select>
+        </label>
+        <div class="admin-row" id="n-cat-new-row" hidden>
+          <label class="admin-field" style="flex:1">
+            <span>新分类名称</span>
+            <input type="text" id="n-cat-new-title" placeholder="比如 Go / 分布式系统…" />
+          </label>
+          <label class="admin-field" style="flex:1">
+            <span>分类路径 slug（仅小写字母/数字/连字符）</span>
+            <input type="text" id="n-cat-new-slug" placeholder="go" autocomplete="off" />
+          </label>
+          <button class="admin-btn" id="btn-cat-create" type="button">创建分类</button>
+        </div>
+
+        <div class="admin-row">
+          <label class="admin-field" style="flex:1">
+            <span>标题 *</span>
+            <input type="text" id="n-title" placeholder="文章标题…" />
+          </label>
+          <label class="admin-field" style="flex:1">
+            <span>路径 slug *（仅小写字母/数字/连字符，发布后不可改）</span>
+            <input type="text" id="n-slug" placeholder="my-post-slug" autocomplete="off" />
+          </label>
+        </div>
+        <div class="admin-row">
+          <label class="admin-field" style="width:180px">
+            <span>日期</span>
+            <input type="date" id="n-date" />
+          </label>
+          <label class="admin-check" style="margin-top:1.4rem">
+            <input type="checkbox" id="n-draft" />
+            <span>存为草稿（不上线）</span>
+          </label>
+        </div>
+        <label class="admin-field">
+          <span>正文（支持 Markdown）*</span>
+          <textarea id="n-body" rows="12" placeholder="写点技术笔记…"></textarea>
+        </label>
+        <div class="admin-row">
+          <button class="admin-btn" id="btn-n-save" type="button">发布笔记</button>
+          <button class="admin-btn ghost" id="btn-n-cancel" type="button" hidden>取消编辑</button>
+        </div>
+
+        <div class="admin-row admin-row--head" style="margin-top:1.8rem">
+          <h2 style="margin:0;font-size:1rem">现有笔记</h2>
+          <button class="admin-btn ghost" id="btn-n-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="note-list"></ol>
+      </section>
+
+      <!-- Theme -->
+      {{ $palettes := slice
+        (dict "id" "midnight" "name" "深海·琥珀")
+        (dict "id" "stone" "name" "暖炭·米白")
+        (dict "id" "dusk" "name" "暮色·薰衣")
+        (dict "id" "forest" "name" "林间·薄荷")
+        (dict "id" "ink" "name" "墨白·纯粹")
+        (dict "id" "claude" "name" "暖土·赤陶")
+        (dict "id" "linear" "name" "黑曜·靛蓝")
+        (dict "id" "vercel" "name" "纯黑·电蓝")
+        (dict "id" "raycast" "name" "炭黑·火焰")
+        (dict "id" "newjeans1" "name" "星紫")
+        (dict "id" "newjeans2" "name" "洋红")
+        (dict "id" "newjeans3" "name" "粉焰")
+        (dict "id" "newjeans4" "name" "橙赤")
+        (dict "id" "newjeans5" "name" "暖橘")
+        (dict "id" "newjeans6" "name" "阳黄")
+        (dict "id" "newjeans7" "name" "青柠")
+        (dict "id" "newjeans8" "name" "草绿")
+      }}
+      <section class="admin-box" id="panel-theme" hidden>
+        <h2>站点默认外观</h2>
+        <p class="admin-muted">访客第一次打开网站时看到的配色与字体。当前：<strong id="cur-theme">—</strong></p>
+        <div class="admin-row">
+          <label class="admin-field" style="flex:1">
+            <span>配色</span>
+            <select id="t-palette">
+              {{ range $palettes }}<option value="{{ .id }}">{{ .name }}（{{ .id }}）</option>{{ end }}
+            </select>
+          </label>
+          <label class="admin-field" style="width:130px">
+            <span>明暗</span>
+            <select id="t-mode">
+              <option value="dark">深色</option>
+              <option value="light">浅色</option>
+            </select>
+          </label>
+        </div>
+        <div class="theme-preview" id="theme-preview" data-theme="dark" data-palette="midnight">
+          <span class="tp" style="background:var(--bg)"></span>
+          <span class="tp" style="background:var(--bg2)"></span>
+          <span class="tp" style="background:var(--border)"></span>
+          <span class="tp" style="background:var(--muted)"></span>
+          <span class="tp" style="background:var(--text)"></span>
+          <span class="tp" style="background:var(--accent)"></span>
+        </div>
+        <div class="admin-row" style="margin-top:0.3rem">
+          <label class="admin-field" style="flex:1">
+            <span>正文字体</span>
+            <select id="t-font">
+              <option value="sans">无衬线（默认）</option>
+              <option value="serif">衬线 · 宋体系</option>
+              <option value="mono">等宽</option>
+            </select>
+          </label>
+        </div>
+        <p class="font-preview" id="font-preview" data-font="sans">观其大略，不求甚解 · The quick brown fox jumps over the lazy dog 0123</p>
+        <button class="admin-btn" id="btn-save-theme" type="button">保存默认</button>
+      </section>
+
+      <!-- Particles -->
+      <section class="admin-box" id="panel-particles" hidden>
+        <h2>音乐墙粒子背景</h2>
+        <p class="admin-muted">下方为实时预览（颜色随当前配色）。</p>
+        <div class="particle-preview" id="particle-preview"><canvas id="particle-preview-canvas"></canvas></div>
+        <div class="particle-grid">
+          <label class="admin-field"><span>点间距 <b class="pval" id="v-gap"></b></span>
+            <input type="range" id="p-gap" min="8" max="48" step="1" /></label>
+          <label class="admin-field"><span>点亮度 <b class="pval" id="v-dotOpacity"></b></span>
+            <input type="range" id="p-dotOpacity" min="0" max="1" step="0.02" /></label>
+          <label class="admin-field"><span>震动强度 <b class="pval" id="v-jitter"></b></span>
+            <input type="range" id="p-jitter" min="0" max="4" step="0.1" /></label>
+          <label class="admin-field"><span>波浪周期 <b class="pval" id="v-wavePeriod"></b></span>
+            <input type="range" id="p-wavePeriod" min="2" max="40" step="1" /></label>
+          <label class="admin-field"><span>波浪角度 <b class="pval" id="v-waveAngle"></b></span>
+            <input type="range" id="p-waveAngle" min="0" max="180" step="1" /></label>
+          <label class="admin-field"><span>波浪亮度 <b class="pval" id="v-waveOpacity"></b></span>
+            <input type="range" id="p-waveOpacity" min="0" max="1" step="0.02" /></label>
+        </div>
+        <button class="admin-btn" id="btn-save-particles" type="button" style="margin-top:1.2rem">保存粒子设置</button>
+      </section>
+
+      <pre class="admin-log" id="admin-log" aria-live="polite"></pre>
+    </div>
+  </div>
 </div>
 
 <script src="/js/particles.js" defer></script>
-<script src="/js/thought-tree.js" defer></script>
 <script src="/js/admin.js" defer></script>
 {{ end }}

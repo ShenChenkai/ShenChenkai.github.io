@@ -1,37 +1,22 @@
 {{ define "main" }}
-{{ $data := index hugo.Data "thoughts" }}
-{{ $posts := slice }}
-{{ with $data }}{{ with .posts }}{{ $posts = sort . "date" "desc" }}{{ end }}{{ end }}
-
 <div class="thoughts-page">
   <div class="thoughts-head">
     <h1 class="page-title">Thoughts</h1>
     <p class="subtitle">想到什么写什么 — 长想法与碎碎念。</p>
   </div>
 
+  {{ $data := index hugo.Data "thoughts" }}
+  {{ $posts := slice }}
+  {{ with $data }}{{ with .posts }}{{ $posts = sort . "date" "desc" }}{{ end }}{{ end }}
+
   <div class="thoughts-feed">
     {{ range $posts }}
     <article id="t-{{ .id }}" class="thought thought--{{ default "short" .type }}{{ if eq .source "x" }} thought--x{{ end }}">
-      <div class="thought-avatar" aria-hidden="true">C</div>
-      <div class="thought-main">
-        <div class="thought-head">
-          <span class="thought-name">Chenkai</span>
-          <span class="thought-handle">@ShenChenkai</span>
-          <span class="thought-sep">·</span>
-          <time class="thought-date" datetime="{{ .date }}">{{ dateFormat "2006 · 01 · 02" .date }}</time>
-        </div>
-        {{ with .title }}<h2 class="thought-title">{{ . }}</h2>{{ end }}
-        <div class="thought-body">{{ .body | markdownify }}</div>
-        {{ with .images }}
-        <div class="thought-images img-n{{ len . }}">
-          {{ range . }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}
-        </div>
-        {{ end }}
-        {{ if eq .source "x" }}
-        {{ with .xUrl }}
-        <div class="thought-meta"><a class="thought-src" href="{{ . }}" target="_blank" rel="noopener">在 X 查看 ↗</a></div>
-        {{ end }}
-        {{ end }}
+      {{ with .title }}<h2 class="thought-title">{{ . }}</h2>{{ end }}
+      <div class="thought-body">{{ .body | markdownify }}</div>
+      <div class="thought-meta">
+        <time datetime="{{ .date }}">{{ dateFormat "2006 · 01 · 02" .date }}</time>
+        {{ if eq .source "x" }}{{ with .xUrl }}<a class="thought-src" href="{{ . }}" target="_blank" rel="noopener">在 X 查看 ↗</a>{{ end }}{{ end }}
       </div>
     </article>
     {{ end }}

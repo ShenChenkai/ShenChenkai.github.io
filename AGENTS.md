@@ -19,30 +19,30 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 ```
 .
 ├── AGENTS.md                     # 本文件：项目说明 + agent 约定（含开源 skill）
-├── hugo.toml                     # Hugo 配置：站点标题 TaoChn、菜单（想法/音乐/相册/留言本），theme = taochin-y2k
+├── CLAUDE.md                     # Claude Code 项目说明（main 分支维护，内容与 AGENTS.md 互补）
+├── hugo.toml                     # Hugo 配置：站点标题 TaoChn、菜单（想法/技术/音乐/相册/留言），theme = taochin-y2k
 ├── .github/workflows/hugo.yml    # CI：构建 Hugo 并部署到 GitHub Pages
 ├── .gitignore                    # 忽略 public/、resources/、.codegraph/、.mcp.json、.Codex/、worker 产物等
 ├── index.html, style.css         # 旧的 "Coming soon" 脚手架（已被 Hugo 站点取代，残留无害）
 │
 ├── archetypes/default.md         # hugo new 的内容模板
 ├── content/                      # 页面内容（front matter 指定 layout）
-│   ├── music/index.md            #   /music/      音乐 / 唱片架
-│   ├── thoughts/index.md         #   /thoughts/   想法
+│   ├── music/_index.md           #   /music/      音乐 / 唱片架（列表页）
+│   ├── music/_content.gotmpl     #   music 数据 → music-previews.json 的模板（BGM 输出）
+│   ├── thoughts/index.md         #   /thoughts/   想法（含生活动态合并流）
+│   ├── tech/_index.md            #   /tech/       技术笔记根（分类：clinical / biomedical-signal-process / medical-image-process）
 │   ├── photos/index.md           #   /photos/     相册
 │   ├── guestbook/index.md        #   /guestbook/  留言本
 │   ├── admin/index.md            #   /admin/      后台（不进菜单/sitemap；Y2K 风格，管音乐、想法、留言）
-│   ├── write/index.md            #   /write/      手机发表入口（不进菜单/sitemap；记住密码后可直接写想法）
-│   ├── lab/index.md              #   /lab/        想法树画廊（本次改版先停用）
-│   ├── style/index.md            #   /style/      风格样品页（本次改版先停用）
-│   └── test/index.md             #   /test/       配色测试页（本次改版先停用）
+│   └── write/index.md            #   /write/      手机发表入口（不进菜单/sitemap；记住密码后可直接写想法）
 │
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
 │   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,slug,year?,link?,tracks:[{title,artist,trackNumber?,preview?,link?}]}]}——按专辑浏览；勿手改。preview 为 Apple 官方试听
-│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,images,source,xUrl}]}——后台管理
+│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,images,source,xUrl}]}——后台管理；已是真实数据
+│   ├── life.json                 #   生活动态 {posts:[{id,date,text,images[]}]}（R2 图床 URL）——Worker 管理；想法页把 life posts 合并进想法流展示
 │   ├── guestbook.json            #   访客留言 {messages:[{id,name,body,at}]}——Worker 从 /guestbook/ 公开接口写入，后台可删；勿手改
-│   ├── about.json                #   主页简介 {name_zh,name_en,affiliation,bio,email,portrait,education,papers}——仅已核实信息，论文可空
-│   ├── photos.json               #   相册列表 {photos:[{src,alt,caption}]}——现为 picsum 占位；主题在检测到 picsum 时改用 static/images/photos 试样，不把占位图当作本人照片
-│   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...},tree{style,icon,stroke,seed}}——后台管理
+│   ├── about.json                #   主页简介 {name_zh,name_en,bio,email,portrait,education,projects,papers}——仅本机预览链路（scripts/local-about-admin.py），sample 标记试样
+│   └── site.json                 #   站点配置——Worker 管理；y2k 主题为单一视觉，palette 字段当前无效
 │
 ├── static/images/photos/         # 相册版式试样（sea/city/window/night），不是陈凯的照片
 │
@@ -52,11 +52,12 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   │   ├── _default/             #   baseof / list / single
 │   │   ├── index.html            #   首页：欢迎、想法、唱片架、试样拍立得、留言本
 │   │   ├── partials/             #   head / header（悬挂 logo 签） / footer / thought
-│   │   ├── thoughts/single.html
+│   │   ├── thoughts/single.html  #   想法流：thoughts.json + life.json 按日期合并渲染（生活动态已并入想法栏）
+│   │   ├── tech/list.html        #   /tech/ 列表（根=分类，分类=文章），tech/single.html 文章页
 │   │   ├── music/single.html
 │   │   ├── photos/single.html
 │   │   ├── guestbook/single.html
-│   │   ├── admin/single.html     #   后台：连接 Worker、专辑、想法、留言管理（不含旧主题色/粒子/想法树）
+│   │   ├── admin/single.html     #   后台：连接 Worker、专辑、想法、留言管理（暂缺 Life/Tech 管理面板，数据接口已在 Worker 里）
 │   │   ├── lab/single.html
 │   │   ├── style/single.html
 │   │   └── test/single.html
@@ -67,11 +68,11 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │           ├── admin.js          #   后台：登录、识别专辑、发布/删除想法和专辑（沿用现有 Worker）
 │           └── guestbook.js      #   留言：读 Worker 最新列表、提交留言（蜜罐+乐观上墙）；Worker 不可达时回退到静态渲染列表
 │
-├── themes/chenkai-space/         # 旧主题（warm-editorial 代码），本分支未启用，勿作当前设计来源
+├── themes/chenkai-space/         # 旧主题（main 上的 Life/Tech 版），本分支未启用，勿作当前设计来源
 │
 └── worker/                       # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
-    ├── src/index.js
-    ├── wrangler.toml
+    ├── src/index.js              #   音乐(含 tracks)/想法/留言(公开 POST)/生活(R2 图床)/技术笔记 接口
+    ├── wrangler.toml             #   含 R2 bucket chenkai-life 绑定（LIFE_BUCKET）与各 data 路径 var
     └── README.md
 ```
 

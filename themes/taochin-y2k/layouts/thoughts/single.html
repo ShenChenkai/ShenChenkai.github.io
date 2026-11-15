@@ -1,13 +1,26 @@
 {{ define "main" }}
 {{ $author := .Site.Params.author }}
-{{ $thoughts := .Site.Data.thoughts }}
+{{ $thoughts := dict }}
+{{ if isset .Site.Data "thoughts" }}
+  {{ $thoughts = .Site.Data.thoughts }}
+{{ end }}
 {{ $posts := $thoughts.posts | default slice }}
+{{ $feed := slice }}
+{{ range $posts }}
+  {{ $feed = $feed | append . }}
+{{ end }}
+{{ if isset .Site.Data "life" }}
+  {{ range .Site.Data.life.posts | default slice }}
+    {{ $feed = $feed | append (dict "id" .id "type" "short" "date" .date "title" "" "body" .text "images" .images "source" "admin" "xUrl" "") }}
+  {{ end }}
+{{ end }}
+{{ $feed = sort $feed "date" "desc" }}
 <header class="room-head">
   <h1>想法</h1>
 </header>
-{{ if $posts }}
+{{ if $feed }}
   <div class="board">
-    {{ range $posts }}
+    {{ range $feed }}
       {{ partial "thought.html" (dict "post" . "author" $author) }}
     {{ end }}
   </div>

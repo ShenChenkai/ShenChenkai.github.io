@@ -1,19 +1,21 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}</title>
-<link rel="stylesheet" href="/css/main.css?v=redesign9" />
-{{ $palette := "midnight" }}{{ $mode := "dark" }}
+<link rel="stylesheet" href="/css/main.css" />
+{{ $palette := "midnight" }}{{ $mode := "dark" }}{{ $font := "sans" }}
 {{ with (index hugo.Data "site") }}
   {{ with .defaultPalette }}{{ $palette = . }}{{ end }}
   {{ with .defaultMode }}{{ $mode = . }}{{ end }}
+  {{ with .defaultFont }}{{ $font = . }}{{ end }}
 {{ end }}
 <script>
   (function () {
-    var d = { palette: {{ $palette }}, mode: {{ $mode }} };
+    var d = { palette: {{ $palette }}, mode: {{ $mode }}, font: {{ $font }} };
     window.__SITE_DEFAULTS__ = d;
     var html = document.documentElement;
     html.setAttribute("data-theme", localStorage.getItem("theme") || d.mode);
     html.setAttribute("data-palette", localStorage.getItem("palette") || d.palette);
+    html.setAttribute("data-font", localStorage.getItem("font") || d.font);
   })();
 </script>
 <script src="/js/theme.js" defer></script>

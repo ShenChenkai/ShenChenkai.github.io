@@ -848,6 +848,21 @@ p { margin: 0; }
 .book-note { color: #a33; font-size: .86rem; margin: 0; }
 .book-note[hidden] { display: none; }
 
+/* tech notes list */
+.tech-items { list-style: none; padding: 0; margin: 0 0 8px; }
+.tech-items li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.tech-items li:last-child { border-bottom: 0; }
+.tech-items a { color: var(--accent); }
+.tech-items time { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.tech-post .room-head time { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
+
 /* rounded footer tray */
 .colophon {
   text-align: center;
