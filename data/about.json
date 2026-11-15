@@ -1,0 +1,89 @@
+{
+  "name_zh": "沈晨凯",
+  "name_en": "Chenkai Shen",
+  "email": "shenchenkai@zju.edu.cn",
+  "email_alt": "shenck688@gmail.com",
+  "location_zh": "杭州市浙江大学玉泉校区周亦卿科技大楼 209",
+  "location_en": "Room 209, Zhou Yiqing Science and Technology Building, Yuquan Campus, Zhejiang University, Hangzhou",
+  "portrait": "",
+  "bio": "浙江大学生物医学工程专业学生，预计 2028 年毕业，现在杭州。\n\n这几句是排版试样：用来查看介绍写成两三段时的字号、行距和栏宽，并不增加新的履历。平时在这里放一点学习和生活的记录。",
+  "sample": true,
+  "education": [
+    {
+      "org": "Zhejiang University",
+      "detail": "College of Biomedical Engineering and Instrument Science, B.E.",
+      "when": "2024 — 2028 (expected)"
+    },
+    {
+      "org": "Hangzhou Yuhang Senior High School",
+      "detail": "",
+      "when": ""
+    }
+  ],
+  "projects": [
+    {
+      "author": "C. Shen",
+      "title": "Queqiao",
+      "subtitle": "A LAN file-transfer system for Windows and Mac",
+      "source": "",
+      "when": "2026",
+      "url": "",
+      "note": "Unpublished software"
+    },
+    {
+      "author": "C. Shen",
+      "title": "Oh My HumMod",
+      "subtitle": "An MCP server for driving HumMod / QCP physiology engines",
+      "source": "GitHub",
+      "when": "2026",
+      "url": "https://github.com/TaoChnn/oh-my-hummod"
+    },
+    {
+      "author": "C. Shen",
+      "title": "EarAst",
+      "subtitle": "A WeChat mini program for hearing and ear-use health",
+      "source": "GitHub",
+      "when": "2026",
+      "url": "https://github.com/ShenChenkai/HearHealth"
+    },
+    {
+      "author": "C. Shen",
+      "title": "VOCA",
+      "subtitle": "A terminal vocabulary trainer",
+      "source": "GitHub",
+      "when": "2026",
+      "url": "https://github.com/ShenChenkai/VOCAbulary"
+    },
+    {
+      "author": "C. Shen",
+      "title": "SpeakMath",
+      "subtitle": "An Obsidian plugin that turns natural language into LaTeX",
+      "source": "GitHub",
+      "when": "2026",
+      "url": "https://github.com/TaoChnn/SpeakMath"
+    }
+  ],
+  "papers": [
+    {
+      "author": "C. Shen",
+      "title": "A preprocessing method for wearable physiological signals (sample typography)",
+      "source": "Sample Journal",
+      "when": "2026",
+      "url": ""
+    },
+    {
+      "author": "C. Shen",
+      "title": "Lightweight features for photoplethysmography in short recordings (sample typography)",
+      "source": "Sample Conf. on Biomedical Engineering",
+      "when": "2025",
+      "url": ""
+    },
+    {
+      "author": "C. Shen",
+      "title": "Class lab notes: an EEG recording exercise (sample typography)",
+      "source": "Course report",
+      "when": "2025",
+      "url": ""
+    }
+  ]
+}

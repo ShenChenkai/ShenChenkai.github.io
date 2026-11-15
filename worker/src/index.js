@@ -5,6 +5,7 @@
  *  - Verify the admin password (stored as a Worker secret).
  *  - Resolve song metadata from Apple Music / QQ Music URLs (server-side, no CORS).
  *  - Read / write data/music.json in the GitHub repo (token stored as a secret).
+ *  - Accept public guestbook messages into data/guestbook.json (honeypot + rate limit).
  *
  * Secrets (set via `wrangler secret put` or the dashboard):
  *  - ADMIN_PASSWORD : the password you type in /admin/
@@ -21,6 +22,7 @@ const DEFAULTS = {
   DATA_PATH: "data/music.json",
   SITE_PATH: "data/site.json",
   THOUGHTS_PATH: "data/thoughts.json",
+  GUESTBOOK_PATH: "data/guestbook.json",
 };
 
 // Known palette ids (must match the CSS in static/css/main.css).
@@ -138,6 +140,45 @@ export default {
         }
       }
 
+      // Guestbook: GET is public (data is public on GitHub anyway); POST is the
+      // one unauthenticated write — protected by honeypot + per-IP rate limit.
+      if (url.pathname === "/api/guestbook") {
+        const cfg = config(env);
+
+        if (request.method === "GET") {
+          const { data } = await ghGet(cfg, env, cfg.guestbookPath);
+          return json({ ok: true, messages: asMessages(data) }, 200, cors);
+        }
+        if (request.method === "POST") {
+          const body = await request.json();
+          // Honeypot: humans never fill the hidden "website" field. Pretend
+          // success so bots learn nothing, and store nothing.
+          if (String(body.website || "").trim()) {
+            return json({ ok: true }, 200, cors);
+          }
+          const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+          if (guestbookLimited(ip)) throw httpErr(429, "留言太频繁了，请一小时后再来。");
+          const item = normalizeMessage(body);
+          const { data, sha } = await ghGet(cfg, env, cfg.guestbookPath);
+          const messages = asMessages(data);
+          messages.unshift(item);
+          if (messages.length > 500) messages.length = 500;
+          await ghPut(cfg, env, cfg.guestbookPath, { messages }, sha, "Add guestbook message from " + item.name);
+          return json({ ok: true, message: item }, 200, cors);
+        }
+        if (request.method === "DELETE") {
+          requireAuth(request, env);
+          const { id } = await request.json();
+          const { data, sha } = await ghGet(cfg, env, cfg.guestbookPath);
+          const messages = asMessages(data);
+          const idx = messages.findIndex((m) => m.id === id);
+          if (idx < 0) throw httpErr(400, "未找到该条留言");
+          const removed = messages.splice(idx, 1)[0];
+          await ghPut(cfg, env, cfg.guestbookPath, { messages }, sha, "Remove guestbook message: " + removed.id);
+          return json({ ok: true, messages }, 200, cors);
+        }
+      }
+
       return json({ error: "Not found" }, 404, cors);
     } catch (e) {
       const status = e && e.status ? e.status : 500;
@@ -155,6 +196,7 @@ function config(env) {
     path: env.DATA_PATH || DEFAULTS.DATA_PATH,
     sitePath: env.SITE_PATH || DEFAULTS.SITE_PATH,
     thoughtsPath: env.THOUGHTS_PATH || DEFAULTS.THOUGHTS_PATH,
+    guestbookPath: env.GUESTBOOK_PATH || DEFAULTS.GUESTBOOK_PATH,
   };
 }
 
@@ -235,18 +277,80 @@ function json(obj, status, cors) {
   });
 }
 
+function normalizeTrack(t) {
+  const out = {
+    title: String(t.title || "").trim(),
+    artist: String(t.artist || "").trim(),
+  };
+  const n = Number(t.trackNumber);
+  const d = Number(t.discNumber);
+  if (n) out.trackNumber = n;
+  if (d && d !== 1) out.discNumber = d;
+  const preview = String(t.preview || "").trim();
+  const link = String(t.link || "").trim();
+  const embed = String(t.embed || "").trim();
+  if (preview) out.preview = preview;
+  if (link) out.link = link;
+  if (embed) out.embed = embed;
+  return out;
+}
+
 function normalizeAlbum(a) {
-  return {
+  const out = {
     title: String(a.title || "").trim(),
     artist: String(a.artist || "").trim(),
     cover: String(a.cover || "").trim(),
     link: String(a.link || "").trim() || "#",
   };
+  const preview = String(a.preview || "").trim();
+  const embed = String(a.embed || "").trim();
+  const slug = String(a.slug || "").trim();
+  const year = Number(a.year);
+  if (preview) out.preview = preview;
+  if (embed) out.embed = embed;
+  if (slug) out.slug = slug;
+  if (year) out.year = year;
+  if (Array.isArray(a.tracks)) out.tracks = a.tracks.map(normalizeTrack).filter((t) => t.title);
+  return out;
 }
 
 // ── thoughts ────────────────────────────────────────────────
 function asPosts(data) {
   return data && Array.isArray(data.posts) ? data.posts : [];
+}
+
+// ── guestbook ───────────────────────────────────────────────
+function asMessages(data) {
+  return data && Array.isArray(data.messages) ? data.messages : [];
+}
+
+function normalizeMessage(m) {
+  const name = String(m.name || "").trim().slice(0, 40);
+  const body = String(m.body || "").trim().slice(0, 500);
+  if (!name || !body) throw httpErr(400, "昵称和留言内容不能为空");
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name,
+    body,
+    at: new Date().toISOString(),
+  };
+}
+
+// Best-effort per-IP limit (per isolate memory): 3 messages per hour.
+const GB_WINDOW_MS = 60 * 60 * 1000;
+const GB_MAX_PER_HOUR = 3;
+const gbHits = new Map();
+function guestbookLimited(ip) {
+  const now = Date.now();
+  const recent = (gbHits.get(ip) || []).filter((t) => now - t < GB_WINDOW_MS);
+  if (recent.length >= GB_MAX_PER_HOUR) {
+    gbHits.set(ip, recent);
+    return true;
+  }
+  recent.push(now);
+  gbHits.set(ip, recent);
+  if (gbHits.size > 2000) gbHits.clear(); // crude memory guard
+  return limited;
 }
 
 function normalizeThought(p) {

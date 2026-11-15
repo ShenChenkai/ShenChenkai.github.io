@@ -1,0 +1,14 @@
+{{- $tracks := slice -}}
+{{- range site.Data.music.albums -}}
+  {{- $cover := .cover -}}
+  {{- range .tracks -}}
+    {{- if .preview -}}
+      {{- $item := dict "title" .title "artist" .artist "preview" .preview -}}
+      {{- if $cover -}}
+        {{- $item = merge $item (dict "cover" $cover) -}}
+      {{- end -}}
+      {{- $tracks = $tracks | append $item -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $tracks | jsonify -}}

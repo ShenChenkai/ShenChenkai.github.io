@@ -1,0 +1,23 @@
+{{ define "main" }}
+{{ $photos := slice
+  (dict "src" ("images/photos/sea.jpg" | relURL) "n" "01")
+  (dict "src" ("images/photos/city.jpg" | relURL) "n" "02")
+  (dict "src" ("images/photos/window.jpg" | relURL) "n" "03")
+  (dict "src" ("images/photos/night.jpg" | relURL) "n" "04")
+}}
+<header class="room-head">
+  <h1>相册</h1>
+</header>
+<div class="album-page">
+  <ul class="album-spread">
+    {{ range $i, $p := $photos }}
+    <li>
+      <figure class="polaroid polaroid-lg" style="--tilt: {{ if eq (mod $i 2) 0 }}-1.4deg{{ else }}1.6deg{{ end }}">
+        <img src="{{ $p.src | safeURL }}" alt="试样照片" loading="lazy">
+        <figcaption>试样 {{ $p.n }}</figcaption>
+      </figure>
+    </li>
+    {{ end }}
+  </ul>
+</div>
+{{ end }}

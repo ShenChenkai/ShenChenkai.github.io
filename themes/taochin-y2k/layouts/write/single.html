@@ -1,0 +1,49 @@
+{{ define "main" }}
+<div class="write-page">
+  <header class="write-head">
+    <a class="write-mark" href="{{ "/" | relURL }}">TaoChn</a>
+    <span class="write-status" id="write-status">未连接</span>
+  </header>
+  <h1>发表</h1>
+  <p class="write-lead">在手机上记下一条想法。提交后大约 1 分钟会上线。</p>
+
+  <section class="write-gate" id="write-gate">
+    <label class="admin-field">
+      <span>管理员密码</span>
+      <input type="password" id="admin-pwd" placeholder="输入密码" autocomplete="current-password">
+    </label>
+    <label class="write-remember">
+      <input type="checkbox" id="write-remember" checked>
+      <span>在这台设备上记住密码</span>
+    </label>
+    <details class="write-advanced">
+      <summary>连接设置</summary>
+      <label class="admin-field">
+        <span>Worker 地址</span>
+        <input type="url" id="worker-url" value="https://music-admin.shenck.workers.dev" placeholder="https://music-admin.xxx.workers.dev" autocomplete="off">
+      </label>
+    </details>
+    <button class="nav-btn is-on write-btn" id="btn-connect" type="button">进入</button>
+  </section>
+
+  <form class="write-form" id="write-form" hidden>
+    <label class="admin-field">
+      <span>标题（可选）</span>
+      <input type="text" id="th-title" maxlength="80" placeholder="有需要再写标题" autocomplete="off">
+    </label>
+    <label class="admin-field">
+      <span>正文 *</span>
+      <textarea id="th-body" rows="10" maxlength="8000" placeholder="写点什么…" required></textarea>
+    </label>
+    <button class="nav-btn nav-btn-submit write-btn" id="btn-th-add" type="submit">发布想法</button>
+  </form>
+
+  <p class="write-flash" id="write-flash" hidden></p>
+  <ol class="admin-list write-recent" id="thought-list" hidden></ol>
+  <p class="write-foot"><a href="{{ "admin/" | relURL }}">打开后台</a></p>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<script src="{{ "js/write.js" | relURL }}" defer></script>
+{{ end }}

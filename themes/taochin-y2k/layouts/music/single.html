@@ -1,0 +1,68 @@
+{{ define "main" }}
+{{ $slug := .Params.slug | default .File.ContentBaseName }}
+{{ $album := false }}
+{{ range .Site.Data.music.albums }}
+  {{ if eq .slug $slug }}{{ $album = . }}{{ end }}
+{{ end }}
+{{ if not $album }}
+<header class="room-head">
+  <p class="room-back"><a href="{{ "music/" | relURL }}">« 音乐</a></p>
+  <h1>没有这张专辑</h1>
+</header>
+{{ else }}
+{{ $tracks := $album.tracks | default slice }}
+<header class="room-head release-head">
+  <p class="room-back"><a href="{{ "music/" | relURL }}">« 音乐</a></p>
+  <div class="release">
+    <div class="release-cover">
+      <span class="sleeve sleeve-lg{{ if not $album.cover }} is-empty{{ end }}">
+        {{ if $album.cover }}
+        <img src="{{ $album.cover | safeURL }}" alt="{{ $album.title }} — {{ $album.artist }}" width="240" height="240">
+        {{ end }}
+      </span>
+    </div>
+    <div class="release-meta">
+      <h1>{{ $album.title }}</h1>
+      <p class="release-artist">{{ $album.artist }}</p>
+      <p class="release-sub">{{ with $album.year }}{{ . }} · {{ end }}{{ len $tracks }} 首</p>
+    </div>
+  </div>
+</header>
+{{ if $tracks }}
+<ol class="track-list">
+  {{ range $tracks }}
+  {{ $id := .title | urlize }}
+  {{ $preview := .preview | default "" }}
+  <li class="track{{ if $preview }} has-preview{{ end }}" id="{{ $id }}">
+    {{ if $preview }}
+    <button type="button" class="track-play album-play" data-preview="{{ $preview }}" data-title="{{ .title }} — {{ .artist }}" aria-pressed="false">
+      <span class="track-no">{{ with .trackNumber }}{{ . }}{{ else }}·{{ end }}</span>
+      <span class="track-body">
+        <span class="track-title">{{ .title }}</span>
+        <span class="track-artist">{{ .artist }}</span>
+      </span>
+      <span class="track-cue" aria-hidden="true">播放</span>
+    </button>
+    {{ else }}
+    <div class="track-static">
+      <span class="track-no">{{ with .trackNumber }}{{ . }}{{ else }}·{{ end }}</span>
+      <span class="track-body">
+        <span class="track-title">{{ .title }}</span>
+        <span class="track-artist">{{ .artist }}</span>
+      </span>
+      {{ if .link }}
+      <a class="track-out" href="{{ .link }}" rel="noopener noreferrer">打开</a>
+      {{ else }}
+      <span class="track-cue is-off">暂无试听</span>
+      {{ end }}
+    </div>
+    {{ end }}
+  </li>
+  {{ end }}
+</ol>
+{{ else }}
+  <p class="empty">这张专辑还没有收录歌曲。</p>
+{{ end }}
+{{ end }}
+{{ end }}
+

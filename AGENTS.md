@@ -9,7 +9,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 附带一个 **Cloudflare Worker 后端**（`worker/`），为 `/admin/` 后台提供：密码登录、音乐链接元数据自动识别（Apple Music / QQ 音乐）、把内容提交回仓库的 `data/*.json`。
 
 ### 技术栈 & 部署链路
-- **Hugo**（extended，本地 v0.162.1）+ 自建主题 `chenkai-space`。
+- **Hugo**（extended，本地 v0.162.1）+ 自建主题：本分支（`redesign/y2k-web`）使用 `taochin-y2k`；`chenkai-space` 仍留在仓库里但未启用。
 - **CI**：push 到 `main` → `.github/workflows/hugo.yml` 自动构建并部署到 Pages（来源须设为 GitHub Actions）。
 - **后台写数据链路**：`/admin/` 页面 → Cloudflare Worker（持密码 + GitHub Token，均为服务端 secret）→ commit `data/music.json` / `data/site.json` → 触发 CI 重建 → 约 1 分钟上线。
 - **主题/配色**：CSS 自定义属性（`--bg/--text/--accent` 等），按 `[data-palette]` + `[data-theme]` 切换；共 17 套配色（9 套常规 + 8 套 NewJeans）。
@@ -19,56 +19,60 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 ```
 .
 ├── AGENTS.md                     # 本文件：项目说明 + agent 约定（含开源 skill）
-├── hugo.toml                     # Hugo 配置：站点标题、菜单（Tech/Thoughts/Photos/Music）
+├── hugo.toml                     # Hugo 配置：站点标题 TaoChn、菜单（想法/音乐/相册/留言本），theme = taochin-y2k
 ├── .github/workflows/hugo.yml    # CI：构建 Hugo 并部署到 GitHub Pages
 ├── .gitignore                    # 忽略 public/、resources/、.codegraph/、.mcp.json、.Codex/、worker 产物等
 ├── index.html, style.css         # 旧的 "Coming soon" 脚手架（已被 Hugo 站点取代，残留无害）
 │
 ├── archetypes/default.md         # hugo new 的内容模板
 ├── content/                      # 页面内容（front matter 指定 layout）
-│   ├── music/index.md            #   /music/    音乐墙页（layout: music/single）
-│   ├── thoughts/index.md         #   /thoughts/ 想法页（layout: thoughts/single）
-│   ├── admin/index.md            #   /admin/    后台（不进菜单/sitemap；layout: admin/single）
-│   ├── lab/index.md              #   /lab/      想法树画法画廊（6 种程序生成的树；layout: lab/single）
-│   └── test/index.md             #   /test/     配色测试页（layout: test/single）
+│   ├── music/index.md            #   /music/      音乐 / 唱片架
+│   ├── thoughts/index.md         #   /thoughts/   想法
+│   ├── photos/index.md           #   /photos/     相册
+│   ├── guestbook/index.md        #   /guestbook/  留言本
+│   ├── admin/index.md            #   /admin/      后台（不进菜单/sitemap；Y2K 风格，管音乐、想法、留言）
+│   ├── write/index.md            #   /write/      手机发表入口（不进菜单/sitemap；记住密码后可直接写想法）
+│   ├── lab/index.md              #   /lab/        想法树画廊（本次改版先停用）
+│   ├── style/index.md            #   /style/      风格样品页（本次改版先停用）
+│   └── test/index.md             #   /test/       配色测试页（本次改版先停用）
 │
 ├── data/                         # Hugo 数据文件（站点读取 + 后台写入）
-│   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,link}]}——后台管理，勿手改
-│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,images,source,xUrl}]}——后台管理（images 字段后台暂不支持，仅展示端支持）
+│   ├── music.json                #   专辑列表 {albums:[{title,artist,cover,slug,year?,link?,tracks:[{title,artist,trackNumber?,preview?,link?}]}]}——按专辑浏览；勿手改。preview 为 Apple 官方试听
+│   ├── thoughts.json             #   想法列表 {posts:[{id,type,date,title,body,images,source,xUrl}]}——后台管理
+│   ├── guestbook.json            #   访客留言 {messages:[{id,name,body,at}]}——Worker 从 /guestbook/ 公开接口写入，后台可删；勿手改
+│   ├── about.json                #   主页简介 {name_zh,name_en,affiliation,bio,email,portrait,education,papers}——仅已核实信息，论文可空
+│   ├── photos.json               #   相册列表 {photos:[{src,alt,caption}]}——现为 picsum 占位；主题在检测到 picsum 时改用 static/images/photos 试样，不把占位图当作本人照片
 │   └── site.json                 #   站点配置 {defaultPalette,defaultMode,particles{...},tree{style,icon,stroke,seed}}——后台管理
 │
-├── themes/chenkai-space/
-│   ├── layouts/
-│   │   ├── _default/
-│   │   │   ├── baseof.html        # 全站骨架（<html><head><body>）
-│   │   │   ├── list.html          # 列表页模板
-│   │   │   └── single.html        # 单页默认模板
-│   │   ├── index.html             # 首页（书桌专辑封套堆 hero + 章节列表,无大标题文案）
-│   │   ├── partials/
-│   │   │   ├── head.html          # <head>：注入默认配色 + 粒子参数为 CSS 变量
-│   │   │   ├── header.html        # 顶部导航 + Music 彩色入口块（手绘音符）
-│   │   │   └── footer.html        # 页脚
-│   │   ├── music/single.html      # 音乐墙：嵌入专辑 JSON + 引 music.js
-│   │   ├── thoughts/single.html   # 想法页：X 时间线式想法流（头像+名字行+正文+图片网格，无卡片）
-│   │   ├── lab/single.html        # 想法树画廊：6 种树并排展示（program 生成，引 thought-tree.js）
-│   │   ├── admin/single.html      # 后台 UI：连接 / 加专辑 / 想法 / 主题色 / 粒子背景 / 想法树 / 列表
-│   │   └── test/single.html       # 配色卡片预览页
-│   └── static/
-│       ├── css/main.css           # 全站样式：配色 tokens、布局、音乐墙、想法卡片、粒子动效、想法树、后台
-│       └── js/
-│           ├── theme.js           # 明暗/配色切换函数（初始值在 head.html 内联应用）
-│           ├── music.js           # 渲染音乐墙：随机打乱、双排反向滚动、占位色块
-│           ├── particles.js       # 全站点阵粒子背景（canvas，每点独立抖动；参数来自 site.json）
-│           ├── photo-pile.js      # 首页书桌专辑堆交互（指针拂动、点击拿起；封面 1:1）
-│           ├── particle-title.js  # hero 文字粒子化（弹簧回弹/指针避让）——首页已移除该标题，文件暂留备用
-│           ├── thought-tree.js    # 想法树生成器：递归生长（根粗梢细/不对称/分叉），仅 lab画廊·admin预览 用
-│           ├── thought-field.js   # /thoughts/ 全屏氛围背景（枝条+神经元）——已停止引用，暂留备用
-│           └── admin.js           # 后台逻辑：调 Worker API（登录/识别/专辑/想法/X抓取/配置/想法树）
+├── static/images/photos/         # 相册版式试样（sea/city/window/night），不是陈凯的照片
 │
-└── worker/                        # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
-    ├── src/index.js               # Worker 主逻辑：鉴权、Apple/QQ 元数据解析、X 帖子抓取、想法增删、GitHub 读写
-    ├── wrangler.toml              # Worker 配置（仓库/路径 vars；secret 不在此）
-    └── README.md                  # Worker 部署步骤（secret 设置、wrangler deploy）
+├── themes/taochin-y2k/           # 本分支正在使用的新主题（从零写，不复用 desk-scene / warm-editorial 代码）
+│   ├── theme.toml
+│   ├── layouts/
+│   │   ├── _default/             #   baseof / list / single
+│   │   ├── index.html            #   首页：欢迎、想法、唱片架、试样拍立得、留言本
+│   │   ├── partials/             #   head / header（悬挂 logo 签） / footer / thought
+│   │   ├── thoughts/single.html
+│   │   ├── music/single.html
+│   │   ├── photos/single.html
+│   │   ├── guestbook/single.html
+│   │   ├── admin/single.html     #   后台：连接 Worker、专辑、想法、留言管理（不含旧主题色/粒子/想法树）
+│   │   ├── lab/single.html
+│   │   ├── style/single.html
+│   │   └── test/single.html
+│   └── static/
+│       ├── css/main.css          #   白页、悬挂签、水晶按钮、唱片架、拍立得、留言本铬件
+│       └── js/
+│           ├── main.js
+│           ├── admin.js          #   后台：登录、识别专辑、发布/删除想法和专辑（沿用现有 Worker）
+│           └── guestbook.js      #   留言：读 Worker 最新列表、提交留言（蜜罐+乐观上墙）；Worker 不可达时回退到静态渲染列表
+│
+├── themes/chenkai-space/         # 旧主题（warm-editorial 代码），本分支未启用，勿作当前设计来源
+│
+└── worker/                       # Cloudflare Worker 后端（独立部署，非 Hugo 一部分）
+    ├── src/index.js
+    ├── wrangler.toml
+    └── README.md
 ```
 
 ## 三、Agent 工作约定（重要）

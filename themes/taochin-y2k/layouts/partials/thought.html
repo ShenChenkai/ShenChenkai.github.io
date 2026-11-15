@@ -1,0 +1,34 @@
+{{ $p := .post }}
+{{ $t := time.AsTime $p.date }}
+{{ $sh := $t.UTC.Add (time.ParseDuration "8h") }}
+<article class="saying">
+  <header class="saying-head">
+    {{ if $p.title }}
+    <h3 class="saying-title">{{ $p.title }}</h3>
+    {{ end }}
+    <time datetime="{{ $p.date }}" title="上海时间">{{ $sh.Format "2006-01-02 15:04" }}</time>
+  </header>
+  <div class="saying-body">{{ $p.body | markdownify }}</div>
+  {{ with $p.images }}
+    {{ $shown := slice }}
+    {{ range . }}
+      {{ if not (strings.Contains . "picsum.photos") }}
+        {{ $shown = $shown | append . }}
+      {{ end }}
+    {{ end }}
+    {{ if $shown }}
+    <div class="saying-pics">
+      {{ range $shown }}
+      <img src="{{ . | safeURL }}" alt="" loading="lazy">
+      {{ end }}
+    </div>
+    {{ end }}
+  {{ end }}
+  <footer class="saying-foot">
+    {{ if and (eq $p.source "x") $p.xUrl }}
+    <a href="{{ $p.xUrl }}" rel="noopener noreferrer">来自 X</a>
+    {{ else }}
+    <span>来自 {{ $.author }}</span>
+    {{ end }}
+  </footer>
+</article>

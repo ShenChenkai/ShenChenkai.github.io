@@ -1,0 +1,17 @@
+{{ define "main" }}
+{{ $author := .Site.Params.author }}
+{{ $thoughts := .Site.Data.thoughts }}
+{{ $posts := $thoughts.posts | default slice }}
+<header class="room-head">
+  <h1>想法</h1>
+</header>
+{{ if $posts }}
+  <div class="board">
+    {{ range $posts }}
+      {{ partial "thought.html" (dict "post" . "author" $author) }}
+    {{ end }}
+  </div>
+{{ else }}
+  <p class="empty">这里还没有想法。</p>
+{{ end }}
+{{ end }}

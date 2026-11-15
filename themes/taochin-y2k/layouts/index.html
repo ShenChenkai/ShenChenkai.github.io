@@ -1,0 +1,166 @@
+{{ define "main" }}
+{{ $albums := .Site.Data.music.albums | default slice }}
+{{ $posts := .Site.Data.thoughts.posts | default slice }}
+{{ $latest := false }}
+{{ if $posts }}{{ $latest = index $posts 0 }}{{ end }}
+{{ $photos := slice
+  (dict "src" ("images/photos/sea.jpg" | relURL) "n" "01")
+  (dict "src" ("images/photos/city.jpg" | relURL) "n" "02")
+  (dict "src" ("images/photos/window.jpg" | relURL) "n" "03")
+  (dict "src" ("images/photos/night.jpg" | relURL) "n" "04")
+}}
+
+{{ $about := .Site.Data.about }}
+<section class="about" id="space">
+  <div class="about-hero">
+    <figure class="portrait{{ if not $about.portrait }} is-empty{{ end }}">
+      {{ if $about.portrait }}
+      <img src="{{ $about.portrait | relURL }}" alt="{{ $about.name_zh }}">
+      {{ else }}
+      <div class="portrait-slot" aria-hidden="true"><span>{{ slicestr $about.name_zh 0 1 }}</span></div>
+      <figcaption>Photo not added yet</figcaption>
+      {{ end }}
+    </figure>
+    <div class="about-side">
+      <div class="about-id">
+        <h1>{{ $about.name_en }}/{{ $about.name_zh }}</h1>
+        {{ if or $about.email $about.email_alt }}
+        <p class="email">{{ with $about.email }}<a href="mailto:{{ . }}">{{ . }}</a>{{ end }}{{ if and $about.email $about.email_alt }}/{{ end }}{{ with $about.email_alt }}<a href="mailto:{{ . }}">{{ . }}</a>{{ end }}</p>
+        {{ end }}
+        {{ with $about.location_zh }}
+        <p class="location">{{ . }}</p>
+        {{ end }}
+        {{ with $about.location_en }}
+        <p class="location-en">{{ . }}</p>
+        {{ end }}
+      </div>
+      <section class="about-edu">
+        <h2>Education</h2>
+        {{ with $about.education }}
+        <ul class="cv-list">
+          {{ range . }}
+          <li>
+            <p class="cv-org">{{ .org }}</p>
+            {{ with .detail }}<p class="cv-detail">{{ . }}</p>{{ end }}
+            {{ with .when }}<p class="cv-when">{{ . }}</p>{{ end }}
+          </li>
+          {{ end }}
+        </ul>
+        {{ else }}
+        <p class="cv-empty">No education listed yet.</p>
+        {{ end }}
+      </section>
+    </div>
+    <p class="hits" data-local-hits>Visits</p>
+  </div>
+  <div class="cv">
+    <div class="about-intro">
+      {{ range $para := split $about.bio "\n" }}
+        {{ $para = trim $para " \t\r" }}
+        {{ if $para }}<p class="bio">{{ $para }}</p>{{ end }}
+      {{ end }}
+    </div>
+    <section class="about-projects">
+      <h2>项目</h2>
+      {{ with $about.projects }}
+      <ol class="biblio">
+        {{ range . }}
+        <li>
+          <span class="biblio-author">{{ .author }}</span>,
+          “{{ if .url }}<a class="biblio-title" href="{{ .url }}" rel="noopener noreferrer">{{ .title }}{{ with .subtitle }}: {{ . }}{{ end }}</a>{{ else }}<cite class="biblio-title">{{ .title }}{{ with .subtitle }}: {{ . }}{{ end }}</cite>{{ end }},”
+          {{ with .source }}{{ . }}, {{ end }}{{ .when }}.
+          {{ with .url }}[Online]. Available: <a class="biblio-url" href="{{ . }}" rel="noopener noreferrer">{{ . }}</a>{{ end }}
+          {{ with .note }}{{ . }}.{{ end }}
+        </li>
+        {{ end }}
+      </ol>
+      {{ else }}
+      <p class="cv-empty">还没有收录项目。</p>
+      {{ end }}
+    </section>
+    <section class="about-papers">
+      <h2>论文</h2>
+      {{ if $about.sample }}
+      <p class="standin-note">The papers listed below are typography samples, not a real publication list.</p>
+      {{ end }}
+      {{ with $about.papers }}
+      <ol class="biblio">
+        {{ range . }}
+        <li>
+          <span class="biblio-author">{{ .author }}</span>,
+          “{{ if .url }}<a class="biblio-title" href="{{ .url }}" rel="noopener noreferrer">{{ .title }}</a>{{ else }}<cite class="biblio-title">{{ .title }}</cite>{{ end }},”
+          {{ with .source }}{{ . }}, {{ end }}{{ .when }}.
+          {{ with .url }}[Online]. Available: <a class="biblio-url" href="{{ . }}" rel="noopener noreferrer">{{ . }}</a>{{ end }}
+        </li>
+        {{ end }}
+      </ol>
+      {{ else }}
+      <p class="cv-empty">还没有收录论文。</p>
+      {{ end }}
+    </section>
+  </div>
+</section>
+
+<div class="home-deck">
+  <article class="tease tease-thought">
+    <h2>想法</h2>
+    {{ if $latest }}
+      {{ $t := time.AsTime $latest.date }}
+      {{ $sh := $t.UTC.Add (time.ParseDuration "8h") }}
+      <p class="tease-kicker">{{ if $.Site.Data.thoughts.sample }}试样 · {{ end }}{{ $sh.Format "2006-01-02" }}{{ with $latest.title }} · {{ . }}{{ end }}</p>
+      <div class="tease-excerpt">{{ $latest.body | replaceRE "(?s)\n.*" "" | plainify }}</div>
+    {{ else }}
+      <p class="tease-excerpt">这里还没有想法。</p>
+    {{ end }}
+    <a class="tease-go" href="{{ "thoughts/" | relURL }}">去想法 »</a>
+  </article>
+
+  <article class="tease tease-book">
+    <h2>留言</h2>
+    <p class="tease-excerpt">还没有留言，人来了再写。</p>
+    <a class="tease-go" href="{{ "guestbook/" | relURL }}">去留言 »</a>
+  </article>
+</div>
+
+<section class="home-music">
+  <div class="home-head">
+    <h2>音乐</h2>
+    <a class="tease-go" href="{{ "music/" | relURL }}">去音乐 »</a>
+  </div>
+  {{ if $albums }}
+  <div class="corner-shelf">
+    <ul class="corner-row">
+      {{ range first 5 $albums }}
+      <li>
+        <a href="{{ printf "music/%s/" .slug | relURL }}" title="{{ .title }} — {{ .artist }}">
+          {{ if .cover }}
+          <img src="{{ .cover | safeURL }}" alt="{{ .title }} — {{ .artist }}" width="120" height="120" loading="lazy">
+          {{ else }}
+          <span class="sleeve is-empty"></span>
+          {{ end }}
+        </a>
+      </li>
+      {{ end }}
+    </ul>
+    <div class="shelf-board" aria-hidden="true"></div>
+  </div>
+  {{ end }}
+</section>
+
+<section class="home-photos">
+  <div class="home-head">
+    <h2>相册</h2>
+    <a class="tease-go" href="{{ "photos/" | relURL }}">去相册 »</a>
+  </div>
+  <ul class="scatter">
+    {{ range $i, $p := $photos }}
+    <li style="--tilt: {{ if eq (mod $i 4) 0 }}-8deg{{ else if eq (mod $i 4) 1 }}5deg{{ else if eq (mod $i 4) 2 }}-3deg{{ else }}7deg{{ end }}; --shift: {{ if eq (mod $i 4) 0 }}-8px{{ else if eq (mod $i 4) 1 }}12px{{ else if eq (mod $i 4) 2 }}18px{{ else }}-4px{{ end }}">
+      <figure class="polaroid polaroid-sm">
+        <img src="{{ $p.src | safeURL }}" alt="试样照片" loading="lazy">
+        <figcaption>试样 {{ $p.n }}</figcaption>
+      </figure>
+    </li>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}

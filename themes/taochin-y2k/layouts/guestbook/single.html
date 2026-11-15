@@ -1,0 +1,41 @@
+{{ define "main" }}
+<header class="room-head">
+  <h1>留言</h1>
+</header>
+<div class="book-stage">
+  <div class="book-list" data-guestbook-list>
+    {{ $messages := slice }}
+    {{ if isset .Site.Data "guestbook" }}
+      {{ $messages = .Site.Data.guestbook.messages | default slice }}
+    {{ end }}
+    {{ if $messages }}
+      {{ range $messages }}
+        <article class="book-entry">
+          <header>
+            <strong>{{ .name }}</strong>
+            <time datetime="{{ .at }}">{{ dateFormat "2006-01-02 15:04" .at }}</time>
+          </header>
+          <p>{{ .body }}</p>
+        </article>
+      {{ end }}
+    {{ else }}
+      <p class="empty" data-guestbook-empty>还没有留言。</p>
+    {{ end }}
+  </div>
+  <form class="book-form" data-guestbook-form novalidate>
+    <div class="field">
+      <label for="gb-name">昵称</label>
+      <input id="gb-name" name="name" type="text" maxlength="40" autocomplete="nickname" required>
+    </div>
+    <div class="field">
+      <label for="gb-body">留言</label>
+      <textarea id="gb-body" name="body" rows="5" maxlength="500" required></textarea>
+    </div>
+    <p class="book-hp" aria-hidden="true">
+      <label>网站 <input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+    </p>
+    <p class="book-note" data-guestbook-error hidden></p>
+    <button class="nav-btn nav-btn-submit" type="submit" data-guestbook-submit>写下留言</button>
+  </form>
+</div>
+{{ end }}

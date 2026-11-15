@@ -1,0 +1,30 @@
+{{ define "main" }}
+{{ $albums := .Site.Data.music.albums | default slice }}
+<header class="room-head">
+  <h1>音乐</h1>
+</header>
+{{ if $albums }}
+<p class="room-count">{{ len $albums }} 张专辑</p>
+<div class="shelf-wrap shelf-wrap-full">
+  <ul class="shelf shelf-wrap-grid">
+    {{ range $albums }}
+    {{ $href := printf "music/%s/" .slug | relURL }}
+    <li class="album" id="{{ .slug }}">
+      <a href="{{ $href }}" title="{{ .title }} — {{ .artist }}">
+        <span class="sleeve{{ if not .cover }} is-empty{{ end }}">
+          {{ if .cover }}
+          <img src="{{ .cover | safeURL }}" alt="{{ .title }} — {{ .artist }}" width="160" height="160" loading="lazy">
+          {{ end }}
+        </span>
+      </a>
+      <p class="album-title">{{ .title }}</p>
+      <p class="album-artist">{{ .artist }}</p>
+    </li>
+    {{ end }}
+  </ul>
+  <div class="shelf-board" aria-hidden="true"></div>
+</div>
+{{ else }}
+  <p class="empty">这里还没有音乐。</p>
+{{ end }}
+{{ end }}

@@ -1,0 +1,9 @@
+name = "taochin-y2k"
+license = "MIT"
+licenselink = ""
+description = "Early-2000s personal homepage theme for TaoChn"
+homepage = "https://ShenChenkai.github.io/"
+min_version = "0.120.0"
+
+[author]
+  name = "Chenkai"

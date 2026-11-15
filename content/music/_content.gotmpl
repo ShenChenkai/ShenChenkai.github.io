@@ -1,0 +1,12 @@
+{{ range site.Data.music.albums }}
+  {{ if .slug }}
+    {{ $page := dict
+      "content" (dict "mediaType" "text/markdown" "value" "")
+      "kind" "page"
+      "path" .slug
+      "title" .title
+      "params" (dict "slug" .slug)
+    }}
+    {{ $.AddPage $page }}
+  {{ end }}
+{{ end }}

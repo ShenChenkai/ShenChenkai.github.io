@@ -1,0 +1,157 @@
+{{ define "main" }}
+<div class="admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>后台</h1>
+      <p>主页介绍写在本机预览里，不会发布到线上。音乐和想法需要先连接 Worker，提交后大约 1 分钟会重建上线。手机发表请用 <a href="{{ "write/" | relURL }}">发表</a>。</p>
+    </div>
+    <span class="admin-status" id="conn-status">未连接</span>
+  </header>
+
+
+  <section class="admin-panel admin-about" id="box-about">
+    <div class="admin-row admin-row--head">
+      <h2>主页</h2>
+      <span class="admin-status" id="about-status">检测本地服务…</span>
+    </div>
+    <p class="admin-muted">保存到本机预览的 <code>data/about.json</code>。多写几段介绍、教育经历、项目或论文，首页会按现有版式自动往下排。不会提交到 GitHub 或线上站点。</p>
+    <div id="about-offline">
+      <p class="admin-muted">本地编辑服务还没开，现在不能改这些字段。</p>
+      <button class="nav-btn" id="btn-about-retry" type="button">重试连接</button>
+    </div>
+    <form id="about-form" hidden>
+      <div class="admin-detect-fields admin-about-id">
+        <label class="admin-field"><span>英文名</span><input type="text" id="ab-name-en"></label>
+        <label class="admin-field"><span>中文名</span><input type="text" id="ab-name-zh"></label>
+        <label class="admin-field"><span>学术邮箱</span><input type="email" id="ab-email"></label>
+        <label class="admin-field"><span>备用邮箱</span><input type="email" id="ab-email-alt"></label>
+        <label class="admin-field admin-field-span"><span>办公地点（中文）</span><input type="text" id="ab-loc-zh"></label>
+        <label class="admin-field admin-field-span"><span>办公地点（英文）</span><input type="text" id="ab-loc-en"></label>
+        <label class="admin-field admin-field-span"><span>照片路径或 URL（空着则显示 Photo not added yet.）</span><input type="text" id="ab-portrait" placeholder="/images/portrait.jpg"></label>
+      </div>
+      <label class="admin-field">
+        <span>个人介绍</span>
+        <textarea id="ab-bio" rows="7" placeholder="分段请空一行。"></textarea>
+      </label>
+      <label class="admin-check">
+        <input type="checkbox" id="ab-sample">
+        <span>论文仍是排版试样（首页会显示说明，不会写成正式发表列表）</span>
+      </label>
+
+      <div class="admin-row admin-row--head admin-subhead">
+        <h3>教育经历</h3>
+        <button class="admin-btn-ghost" id="btn-ab-edu" type="button">添加一条</button>
+      </div>
+      <div class="admin-repeat" id="about-edu"></div>
+
+      <div class="admin-row admin-row--head admin-subhead">
+        <h3>项目</h3>
+        <button class="admin-btn-ghost" id="btn-ab-project" type="button">添加一条</button>
+      </div>
+      <div class="admin-repeat" id="about-projects"></div>
+
+      <div class="admin-row admin-row--head admin-subhead">
+        <h3>论文</h3>
+        <button class="admin-btn-ghost" id="btn-ab-paper" type="button">添加一条</button>
+      </div>
+      <div class="admin-repeat" id="about-papers"></div>
+
+      <div class="admin-actions">
+        <button class="nav-btn nav-btn-submit" id="btn-about-save" type="submit">保存主页</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="admin-connect" id="box-connect">
+    <label class="admin-field admin-field-url">
+      <span>Worker 地址</span>
+      <input type="url" id="worker-url" value="https://music-admin.shenck.workers.dev" placeholder="https://music-admin.xxx.workers.dev" autocomplete="off">
+    </label>
+    <label class="admin-field admin-field-pwd">
+      <span>管理员密码</span>
+      <input type="password" id="admin-pwd" placeholder="输入密码" autocomplete="current-password">
+    </label>
+    <div class="admin-connect-go">
+      <button class="nav-btn is-on" id="btn-connect" type="button">连接</button>
+    </div>
+  </section>
+
+  <div class="admin-work" id="admin-work" hidden>
+    <div class="admin-grid">
+      <section class="admin-panel" id="box-add">
+        <h2>音乐</h2>
+        <label class="admin-field">
+          <span>音乐链接（Apple Music / QQ 音乐）</span>
+          <div class="admin-inline">
+            <input type="url" id="f-url" placeholder="粘贴歌曲分享链接…">
+            <button class="nav-btn" id="btn-resolve" type="button">识别</button>
+          </div>
+        </label>
+        <div class="admin-detect">
+          <div class="admin-cover" id="cover-preview" aria-hidden="true"></div>
+          <div class="admin-detect-fields">
+            <label class="admin-field"><span>标题 *</span><input type="text" id="f-title"></label>
+            <label class="admin-field"><span>艺人</span><input type="text" id="f-artist"></label>
+            <label class="admin-field"><span>封面 URL</span><input type="url" id="f-cover"></label>
+            <label class="admin-field"><span>跳转链接</span><input type="url" id="f-link"></label>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <button class="nav-btn nav-btn-submit" id="btn-add" type="button">添加并发布</button>
+        </div>
+
+        <div class="admin-row admin-row--head admin-subhead">
+          <h3>现有专辑</h3>
+          <button class="admin-btn-ghost" id="btn-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="album-list"></ol>
+      </section>
+
+      <section class="admin-panel" id="box-thoughts">
+        <h2>想法</h2>
+        <p class="admin-muted">写一条想法；也可以粘贴 X 帖子链接抓取正文。</p>
+        <label class="admin-field">
+          <span>标题（可选）</span>
+          <input type="text" id="th-title" placeholder="有需要再写标题">
+        </label>
+        <label class="admin-field">
+          <span>从 X 抓取正文（可选）</span>
+          <div class="admin-inline">
+            <input type="url" id="th-xurl" placeholder="粘贴 X 帖子链接…">
+            <button class="nav-btn" id="btn-th-fetch" type="button">抓取</button>
+          </div>
+        </label>
+        <label class="admin-field">
+          <span>正文（支持 Markdown）*</span>
+          <textarea id="th-body" rows="7" placeholder="写点什么…"></textarea>
+        </label>
+        <div class="admin-actions">
+          <button class="nav-btn nav-btn-submit" id="btn-th-add" type="button">发布想法</button>
+        </div>
+
+        <div class="admin-row admin-row--head admin-subhead">
+          <h3>现有想法</h3>
+          <button class="admin-btn-ghost" id="btn-th-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="thought-list"></ol>
+      </section>
+
+      <section class="admin-panel" id="box-guestbook">
+        <h2>留言</h2>
+        <p class="admin-muted">访客留言存在仓库 data/guestbook.json，公开可见。删除后约 1 分钟从页面上消失。</p>
+        <div class="admin-row admin-row--head admin-subhead">
+          <h3>现有留言</h3>
+          <button class="admin-btn-ghost" id="btn-gb-reload" type="button">刷新</button>
+        </div>
+        <ol class="admin-list" id="gb-list"></ol>
+      </section>
+    </div>
+  </div>
+
+  <pre class="admin-log" id="admin-log" aria-live="polite"></pre>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<script src="{{ "js/admin.js" | relURL }}" defer></script>
+{{ end }}

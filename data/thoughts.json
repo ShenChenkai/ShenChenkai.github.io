@@ -1,31 +1,30 @@
 {
+  "sample": true,
   "posts": [
     {
-      "id": "demo-long",
-      "type": "long",
-      "date": "2026-06-14T09:30:00Z",
-      "title": "为什么我把 Essays 改成了 Thoughts",
-      "body": "「Essays」总让我觉得每条都得是篇正经文章，压力很大。\n\n改叫 **Thoughts** 之后，长想法、短碎念都能往里丢：\n\n- 想清楚的，写成带标题的长想法\n- 一闪而过的，几句话的短想法\n- 在 X 上发过的，贴个链接抓回来\n\n这样我发观点会更随意，也更频繁。",
-      "images": ["https://picsum.photos/seed/chenkai-a/960/600"],
+      "id": "sample-titled",
+      "date": "2026-11-13T06:20:00Z",
+      "title": "关于这条栏宽（试样）",
+      "body": "这是一条带标题的想法试样，用来看标题、日期和正文排在一起时的字号和间距。不是真实日记。\n\n正文可以写到两三小段。这样能看出段落之间空得够不够，一行大概走到哪里会换行。里面也可以有一点 **强调**，或一个短列表：\n\n- 先看标题和日期\n- 再看两三段正文\n- 最后看页脚署名",
       "source": "admin",
-      "xUrl": ""
+      "xUrl": "",
+      "images": []
     },
     {
-      "id": "demo-x",
-      "type": "short",
-      "date": "2026-06-12T14:00:00Z",
-      "body": "Music saves the world —— 这句 tagline 越用越觉得对。",
-      "source": "x",
-      "xUrl": "https://x.com/jack/status/20"
+      "id": "sample-untitled",
+      "date": "2026-11-11T13:05:00Z",
+      "body": "这是没有标题的想法试样。大多数时候大概会是这样：几句话，日期在上面，署名在下面。",
+      "source": "admin",
+      "xUrl": "",
+      "images": []
     },
     {
-      "id": "demo-short",
-      "type": "short",
-      "date": "2026-06-10T20:15:00Z",
-      "body": "深夜调配色，发现 `claude` 那套暖土赤陶在浅色模式下意外地耐看。",
-      "images": ["https://picsum.photos/seed/chenkai-c/620/620", "https://picsum.photos/seed/chenkai-d/620/620"],
+      "id": "sample-short",
+      "date": "2026-11-09T12:40:00Z",
+      "body": "再短一点的试样：一行也要站得住。",
       "source": "admin",
-      "xUrl": ""
+      "xUrl": "",
+      "images": []
     }
   ]
 }

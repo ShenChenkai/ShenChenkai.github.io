@@ -1,0 +1,14 @@
+{{/* Return an official Apple Music embed src, or empty. Uses .embed if set, otherwise derives it from an Apple Music .link. */}}
+{{ $raw := "" }}
+{{ with .embed }}{{ $raw = . }}{{ end }}
+{{ if not $raw }}{{ with .link }}{{ $raw = . }}{{ end }}{{ end }}
+{{ $src := "" }}
+{{ if $raw }}
+  {{ if or (strings.Contains $raw "embed.music.apple.com") (strings.Contains $raw "music.apple.com") }}
+    {{ $src = replace $raw "://music.apple.com" "://embed.music.apple.com" }}
+    {{ $src = replaceRE "[&?]uo=[^&]*" "" $src }}
+    {{ $src = replaceRE "\\?&" "?" $src }}
+    {{ $src = replaceRE "\\?$" "" $src }}
+  {{ end }}
+{{ end }}
+{{ return $src }}

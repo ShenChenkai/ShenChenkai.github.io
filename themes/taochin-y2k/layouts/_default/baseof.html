@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body class="is-{{ if .IsHome }}home{{ else if in .RelPermalink "/admin/" }}admin{{ else if in .RelPermalink "/write/" }}write{{ else }}{{ .Section | default "page" }}{{ end }}">
+  <div class="desk">
+    <div class="sheet">
+      {{ if not (in .RelPermalink "/write/") }}
+      {{ partial "header.html" . }}
+      {{ end }}
+      <main class="stage">
+        {{ block "main" . }}{{ end }}
+      </main>
+      {{ if not (in .RelPermalink "/write/") }}
+      {{ partial "footer.html" . }}
+      {{ end }}
+    </div>
+  </div>
+  {{ if and (not (in .RelPermalink "/write/")) (not (in .RelPermalink "/admin/")) }}
+  <aside class="bgm" id="bgm" data-list="{{ "music-previews.json" | relURL }}">
+    <button type="button" class="bgm-toggle" aria-pressed="false" aria-label="轻声播放背景音乐">
+      <span class="bgm-disc">
+        <img class="bgm-cover" alt="" hidden>
+        <span class="bgm-note" aria-hidden="true">♪</span>
+      </span>
+    </button>
+    <div class="bgm-meta">
+      <p class="bgm-now">轻声播放</p>
+      <p class="bgm-artist" hidden></p>
+    </div>
+  </aside>
+  {{ end }}
+  <script src="{{ "js/main.js" | relURL }}" defer></script>
+  <script src="{{ "js/music.js" | relURL }}" defer></script>
+  <script src="{{ "js/guestbook.js" | relURL }}" defer></script>
+  {{ if and (not (in .RelPermalink "/write/")) (not (in .RelPermalink "/admin/")) }}
+  <script src="{{ "js/bgm.js" | relURL }}" defer></script>
+  {{ end }}
+  {{ block "scripts" . }}{{ end }}
+</body>
+</html>

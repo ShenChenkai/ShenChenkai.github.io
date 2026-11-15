@@ -1,0 +1,11 @@
+<footer class="colophon">
+  <nav class="colophon-nav" aria-label="页脚">
+    <a href="{{ "/" | relURL }}">空间</a>
+    <a href="{{ "thoughts/" | relURL }}">想法</a>
+    <a href="{{ "music/" | relURL }}">音乐</a>
+    <a href="{{ "photos/" | relURL }}">相册</a>
+    <a href="{{ "guestbook/" | relURL }}">留言</a>
+  </nav>
+  <p>{{ .Site.Title }} · {{ .Site.Params.author }}</p>
+  <p class="colophon-tag">{{ .Site.Params.tagline }}</p>
+</footer>

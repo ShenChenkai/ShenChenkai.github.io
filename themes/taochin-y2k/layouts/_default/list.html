@@ -1,0 +1,13 @@
+{{ define "main" }}
+<article class="mod">
+  <div class="mod-bar"><h1>{{ .Title }}</h1></div>
+  <div class="mod-body prose">
+    {{ .Content }}
+    <ul class="plain-list">
+      {{ range .Pages }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    </ul>
+  </div>
+</article>
+{{ end }}

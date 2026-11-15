@@ -1,7 +1,7 @@
 baseURL = "https://ShenChenkai.github.io/"
 languageCode = "zh-CN"
 title = "TaoChn"
-theme = "chenkai-space"
+theme = "taochin-y2k"
 enableEmoji = true
 
 [params]
@@ -10,10 +10,27 @@ enableEmoji = true
 
 [menu]
   [[menu.main]]
-    name = "Thoughts"
+    name = "想法"
     url = "/thoughts/"
     weight = 1
   [[menu.main]]
-    name = "Music"
+    name = "音乐"
     url = "/music/"
     weight = 2
+  [[menu.main]]
+    name = "相册"
+    url = "/photos/"
+    weight = 3
+  [[menu.main]]
+    name = "留言"
+    url = "/guestbook/"
+    weight = 4
+
+
+[outputFormats.Bgm]
+  mediaType = "application/json"
+  baseName = "music-previews"
+  isPlainText = true
+
+[outputs]
+  home = ["HTML", "Bgm"]

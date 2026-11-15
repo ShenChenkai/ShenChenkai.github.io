@@ -1,0 +1,15 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ if .IsHome }}{{ .Site.Title }} · {{ .Site.Params.tagline }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+<meta name="description" content="{{ .Site.Title }} — {{ .Site.Params.tagline }}">
+<meta name="author" content="{{ .Site.Params.author }}">
+<link rel="stylesheet" href="{{ "css/main.css" | relURL }}?v=2">
+
+{{ if in .RelPermalink "/write/" }}
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="发表">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="{{ "images/write-icon.png" | relURL }}">
+<link rel="manifest" href="{{ "write-manifest.json" | relURL }}">
+{{ end }}

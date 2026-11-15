@@ -1,0 +1,12 @@
+{
+  "name": "TaoChn 发表",
+  "short_name": "发表",
+  "start_url": "/write/",
+  "display": "standalone",
+  "background_color": "#d9e3ec",
+  "theme_color": "#ffffff",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "/images/write-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
