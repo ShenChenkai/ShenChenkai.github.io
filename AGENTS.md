@@ -64,7 +64,7 @@ Chenkai 的个人主页。**Hugo 静态站**，部署在 **GitHub Pages**（`htt
 │   └── static/
 │       ├── css/main.css          #   白页、悬挂签、水晶按钮、唱片架、拍立得、留言本铬件
 │       └── js/
-│           ├── main.js
+│           ├── main.js           #   全站铬件：访问计数、封面加载兜底、想法图点击放大（FLIP 至屏幕中央，Esc/点击关闭）
 │           ├── admin.js          #   后台：登录、识别专辑、发布/删除想法和专辑（沿用现有 Worker）
 │           └── guestbook.js      #   留言：读 Worker 最新列表、提交留言（蜜罐+乐观上墙）；Worker 不可达时回退到静态渲染列表
 │
