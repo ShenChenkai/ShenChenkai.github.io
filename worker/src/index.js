@@ -483,12 +483,16 @@ function guestbookLimited(ip) {
 
 function normalizeThought(p) {
   const type = p.type === "long" ? "long" : "short";
+  const images = Array.isArray(p.images)
+    ? p.images.map((u) => String(u || "").trim()).filter((u) => u && u.length <= 400).slice(0, 9)
+    : [];
   return {
     id: String(p.id || "").trim() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
     type,
     date: String(p.date || "").trim() || new Date().toISOString(),
     title: type === "long" ? String(p.title || "").trim() : "",
     body: String(p.body || "").trim(),
+    images,
     source: p.source === "x" ? "x" : "admin",
     xUrl: String(p.xUrl || "").trim(),
   };

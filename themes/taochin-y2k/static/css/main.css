@@ -1405,6 +1405,57 @@ body.is-write .stage { padding: 0; }
 }
 .write-page .nav-btn-submit { width: 100%; min-width: 0; }
 
+.write-pics-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.write-pics-row:empty { display: none; }
+.write-pic {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #eef3f8;
+}
+.write-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.write-pic-del {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(27, 27, 27, .6);
+  color: #fff;
+  font-size: .72rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.write-pic-add {
+  appearance: none;
+  width: 72px;
+  height: 72px;
+  margin-top: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+.write-pic-add:disabled { opacity: .55; cursor: default; }
+
 .write-flash {
   margin-top: 16px;
   font-size: .88rem;

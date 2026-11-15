@@ -35,6 +35,12 @@
       <span>正文 *</span>
       <textarea id="th-body" rows="10" maxlength="8000" placeholder="写点什么…" required></textarea>
     </label>
+    <div class="admin-field write-pics">
+      <span>图片（可选，最多 9 张）</span>
+      <div class="write-pics-row" id="write-pics"></div>
+      <input type="file" id="pics-input" accept="image/*" multiple hidden>
+      <button type="button" class="write-pic-add" id="btn-pics">＋ 添加图片</button>
+    </div>
     <button class="nav-btn nav-btn-submit write-btn" id="btn-th-add" type="submit">发布想法</button>
   </form>
 
@@ -45,5 +51,5 @@
 {{ end }}
 
 {{ define "scripts" }}
-<script src="{{ "js/write.js" | relURL }}" defer></script>
+<script src="{{ "js/write.js" | relURL }}?v=2" defer></script>
 {{ end }}
