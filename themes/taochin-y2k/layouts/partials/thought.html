@@ -2,12 +2,11 @@
 {{ $t := time.AsTime $p.date }}
 {{ $sh := $t.UTC.Add (time.ParseDuration "8h") }}
 <article class="saying">
+  {{ if $p.title }}
   <header class="saying-head">
-    {{ if $p.title }}
     <h3 class="saying-title">{{ $p.title }}</h3>
-    {{ end }}
-    <time datetime="{{ $p.date }}" title="上海时间">{{ $sh.Format "2006-01-02 15:04" }}</time>
   </header>
+  {{ end }}
   <div class="saying-body">{{ $p.body | markdownify }}</div>
   {{ with $p.images }}
     {{ $shown := slice }}
@@ -25,6 +24,7 @@
     {{ end }}
   {{ end }}
   <footer class="saying-foot">
+    <time datetime="{{ $p.date }}" title="上海时间">{{ $sh.Format "2006年01月02日 15:04" }}</time>
     {{ if and (eq $p.source "x") $p.xUrl }}
     <a href="{{ $p.xUrl }}" rel="noopener noreferrer">来自 X</a>
     {{ else }}

@@ -578,21 +578,27 @@ p { margin: 0; }
   border: 1px solid var(--sky);
   border-radius: 6px;
   padding: 14px 16px 12px;
+  font-family: "Trebuchet MS", SimSun, "宋体", "NSimSun", serif;
 }
-.saying-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
-  margin-bottom: 6px;
-}
+.saying-head { margin-bottom: 6px; }
 .saying-title { font-size: 1.05rem; font-weight: 600; }
 .saying-title-soft { font-weight: 500; color: var(--muted); }
-.saying-head time { flex-shrink: 0; font-size: .78rem; color: var(--muted); }
 .saying-body { font-size: .95rem; }
 .saying-body p + p { margin-top: .7em; }
 .saying-body ul, .saying-body ol { margin: .5em 0 0 1.2em; padding: 0; }
-.saying-foot { margin-top: 8px; font-size: .78rem; color: var(--muted); }
+.saying-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 7px;
+  border-top: 1px dashed #b9cfdf;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.saying-foot time { flex-shrink: 0; }
+.saying-foot a { color: var(--muted); text-decoration: underline; }
 
 /* thought images: uniform tiles, click zooms to center (main.js) */
 .saying-pics {
