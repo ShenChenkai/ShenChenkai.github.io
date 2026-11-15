@@ -1,15 +1,26 @@
 {{ define "main" }}
 <header class="room-head">
-  <h1>技术</h1>
+  <h1>{{ .Title }}</h1>
 </header>
 {{ $items := .Sections }}
-{{ if eq (len $items) 0 }}{{ $items = .RegularPages }}{{ end }}
+{{ if eq (len $items) 0 }}{{ $items = sort .RegularPages "Date" "desc" }}{{ end }}
 {{ if $items }}
-<ul class="tech-items">
+<ul class="tech-cards">
   {{ range $items }}
+  {{ $cover := "" }}
+  {{ with .Params.cover }}{{ $cover = . }}{{ end }}
+  {{ if not $cover }}
+    {{ with .Resources.GetMatch "cover*" }}{{ $cover = .RelPermalink }}{{ end }}
+  {{ end }}
+  {{ if not $cover }}
+    {{ $covers := slice "images/photos/sea.jpg" "images/photos/city.jpg" "images/photos/window.jpg" "images/photos/night.jpg" }}
+    {{ $cover = index $covers (mod (hash.FNV32a .Path) 4) }}
+  {{ end }}
   <li>
-    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-    {{ if eq .Kind "page" }}<time>{{ .Date.Format "2006-01-02" }}</time>{{ end }}
+    <a class="tech-card" href="{{ .RelPermalink }}">
+      <span class="tech-card-pic"><img src="{{ $cover | safeURL }}" alt="" loading="lazy"></span>
+      <span class="tech-card-title">{{ .Title }}</span>
+    </a>
   </li>
   {{ end }}
 </ul>
