@@ -18,7 +18,7 @@
   {{ end }}
   <li>
     <a class="tech-card" href="{{ .RelPermalink }}">
-      <span class="tech-card-pic"><img src="{{ $cover | safeURL }}" alt="" loading="lazy"></span>
+      <span class="tech-card-pic"><img src="{{ $cover | relURL | safeURL }}" alt="" loading="lazy"></span>
       <span class="tech-card-title">{{ .Title }}</span>
     </a>
   </li>
