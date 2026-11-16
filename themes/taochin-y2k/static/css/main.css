@@ -840,6 +840,8 @@ body.pic-zoom-lock { overflow: hidden; }
   border-radius: 4px;
   padding: 20px 20px 22px;
   margin-bottom: 16px;
+  min-width: 0;
+  overflow: hidden; /* 表单再怎么撑也不会溢出卡片 */
 }
 .book-list { display: grid; gap: 12px; margin-bottom: 20px; min-height: 3em; }
 .book-entry {
@@ -866,8 +868,11 @@ body.pic-zoom-lock { overflow: hidden; }
   background: #f7f7f7;
   margin: 0 -8px -8px;
   padding: 16px 8px 8px;
+  width: calc(100% + 16px);
+  max-width: calc(100% + 16px);
+  min-width: 0;
 }
-.field { display: grid; gap: 6px; }
+.field { display: grid; gap: 6px; min-width: 0; }
 .field label { font-size: .85rem; color: var(--muted); }
 .field input,
 .field textarea {
@@ -878,6 +883,9 @@ body.pic-zoom-lock { overflow: hidden; }
   padding: 8px 10px;
   background: #fff;
   box-shadow: inset 1px 1px 2px rgba(20, 40, 60, .15);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .field input:focus,
 .field textarea:focus {
