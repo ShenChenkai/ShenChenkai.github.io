@@ -478,7 +478,7 @@ function guestbookLimited(ip) {
   recent.push(now);
   gbHits.set(ip, recent);
   if (gbHits.size > 2000) gbHits.clear(); // crude memory guard
-  return limited;
+  return false;
 }
 
 function normalizeThought(p) {
